@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VmwareVcenterOrchestrator", "VmwareVcenterOrchestrator\VmwareVcenterOrchestrator.csproj", "{3645725A-2C84-4536-9A04-4F4CEDF30B21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VmwareVcenterOrchestratorTest", "VmwareVcenterOrchestratorTest\VmwareVcenterOrchestratorTest.csproj", "{A1671009-5C03-4A81-84F8-4353928D7A57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{A1671009-5C03-4A81-84F8-4353928D7A57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1671009-5C03-4A81-84F8-4353928D7A57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1671009-5C03-4A81-84F8-4353928D7A57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1671009-5C03-4A81-84F8-4353928D7A57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

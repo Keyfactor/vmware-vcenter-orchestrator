@@ -1,0 +1,77 @@
+using Microsoft.Extensions.Logging;
+using Keyfactor.Logging;
+using System.Net.Http.Headers;
+using System.Text;
+using Keyfactor.Orchestrators.Common.Enums;
+using Keyfactor.Orchestrators.Extensions;
+using Newtonsoft.Json;
+
+namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
+{
+    public class VmwareVcenterClient
+    {
+        public VmwareVcenterClient(string vCenterHostname, string username, string password)
+        {
+            Log = LogHandler.GetClassLogger<VmwareVcenterClient>();
+            Log.LogDebug("Initializing VMware vCenter client");
+
+            var VcenterClientHandler = new HttpClientHandler();
+
+            VcenterClientHandler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            VcenterClient = new HttpClient(VcenterClientHandler);
+            VcenterClient.BaseAddress = new Uri("https://" + vCenterHostname);
+
+            var apiKey = GetApiToken(username, password);
+            VcenterClient.DefaultRequestHeaders.Add("vmware-api-session-id", apiKey);
+        }
+        private ILogger Log { get; }
+        private HttpClient VcenterClient { get; }
+
+        private string GetApiToken(string username, string password)
+        {
+            string credentials = username + ":" + password;
+            string encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+            
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/session");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
+            var response = VcenterClient.SendAsync(request);
+            response.Wait();
+            
+            var apiKeyTask = response.Result.Content.ReadAsStringAsync();
+            apiKeyTask.Wait();
+            
+            return apiKeyTask.Result.Trim('\"');
+        }
+
+        public IEnumerable<CurrentInventoryItem> GetVcenterSslCertificate() 
+        {
+            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
+
+            //This endpoint does not return certificate chains
+            var response = VcenterClient.GetAsync("/api/vcenter/certificate-management/vcenter/tls");
+            response.Wait();
+            var sslCertResp = response.Result.Content.ReadAsStringAsync();
+            sslCertResp.Wait();
+            var SslCert = JsonConvert.DeserializeObject<GetVcenterSslCertificateResponse>(sslCertResp.Result);
+            
+            // ApplicationGatewaySslCertificate is in PEM format
+            //Remove the BEGIN/END
+            SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
+           
+            // Create new inventory item for the certificate
+            List<string> certList = new List<string>{ SslCert.cert };
+            
+            CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
+            {
+                Alias = SslCert.subject_alternative_name[0],
+                PrivateKeyEntry = false,
+                ItemStatus = OrchestratorInventoryItemStatus.Unknown,
+                UseChainLevel = true,
+                Certificates = certList
+            };
+            inventoryItems.Add(inventoryItem);
+
+            return inventoryItems;
+        }
+    }
+}

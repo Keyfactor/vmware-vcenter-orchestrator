@@ -1,0 +1,19 @@
+﻿namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
+
+struct GetVcenterSslCertificateResponse
+{
+    public string issuer_dn;
+    public List<string> key_usage;
+    public string thumbprint;
+    public string valid_from;
+    public string serial_number;
+    public string cert;
+    public int version;
+    public string subject_dn;
+    public int path_length_constraint;
+    public List<string> subject_alternative_name;
+    public string valid_to;
+    public string signature_algorithm;
+    public List<string> authority_information_access_uri;
+    public List<string> extended_key_usage;
+}
