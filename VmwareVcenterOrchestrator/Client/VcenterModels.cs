@@ -1,6 +1,6 @@
 ﻿namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
 
-struct GetVcenterSslCertificateResponse
+public struct VcenterCertificateManagementVcenterTlsInfo
 {
     public string issuer_dn;
     public List<string> key_usage;
@@ -16,4 +16,11 @@ struct GetVcenterSslCertificateResponse
     public string signature_algorithm;
     public List<string> authority_information_access_uri;
     public List<string> extended_key_usage;
+}
+
+public struct VcenterCertificateManagementVcenterTlsSet
+{
+    public string cert;
+    public string key;
+    public string root_cert;
 }

@@ -5,6 +5,7 @@ using System.Text;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Newtonsoft.Json;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 {
@@ -52,7 +53,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             response.Wait();
             var sslCertResp = response.Result.Content.ReadAsStringAsync();
             sslCertResp.Wait();
-            var SslCert = JsonConvert.DeserializeObject<GetVcenterSslCertificateResponse>(sslCertResp.Result);
+            var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp.Result);
             
             // ApplicationGatewaySslCertificate is in PEM format
             //Remove the BEGIN/END
@@ -72,6 +73,17 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             inventoryItems.Add(inventoryItem);
 
             return inventoryItems;
+        }
+
+        public void AddVcenterSslCertificate(VcenterCertificateManagementVcenterTlsSet cert)
+        {
+            var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
+            var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
+            var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
+            response.Wait();
+            var sslCertResp = response.Result.Content.ReadAsStringAsync();
+            sslCertResp.Wait();
+            var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp.Result);
         }
     }
 }
