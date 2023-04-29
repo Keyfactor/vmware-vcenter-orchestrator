@@ -1,17 +1,8 @@
 // See https://aka.ms/new-console-template for more information
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client;
-using Microsoft.Extensions.Logging;
-using Keyfactor.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
-using System.Text;
-using Newtonsoft.Json;
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Program
@@ -23,11 +14,13 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             Program p = new Program();
 
             p.TestGetSslCertificate();
+            
+            string caSubjectName = Environment.GetEnvironmentVariable("VCENTER_CA_SUBJECT_NAME") ?? string.Empty;
+            X509Certificate2 caCertificate = CreateCACertificate(caSubjectName);
+            string caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(caCertificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
 
-            X509Certificate2 caCertificate = CreateCACertificate("caserver.example.com");
-            string caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(caCertificate.RawData, Base64FormattingOptions.InsertLineBreaks)}\n-----END CERTIFICATE-----";
-
-            X509Certificate2 signedCertificate = CreateSignedCertificate(caCertificate, "server.example.com");
+            string signedCertSubjectName = Environment.GetEnvironmentVariable("VCENTER_SIGNED_SUBJECT_NAME") ?? string.Empty;
+            X509Certificate2 signedCertificate = CreateSignedCertificate(caCertificate, signedCertSubjectName);
             
             (string CertificatePem, string PemKey) = ConvertCertificateToPemStrings(signedCertificate);
 
@@ -69,30 +62,13 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
         public void TestAddCertificate(VcenterCertificateManagementVcenterTlsSet newCert)
         {
             Console.Write("Adding Vcenter Certificate...\n");
-            Client.AddVcenterSslCertificate(newCert);
+            Client.ReplaceVcenterSslCertificate(newCert);
         }
-        
-        private static X509Certificate2 GetSelfSignedCert(string hostname)
-        {
-            RSA rsa = RSA.Create(2048);
-            CertificateRequest req = new CertificateRequest($"CN={hostname}", rsa, HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
-            
-            SubjectAlternativeNameBuilder subjectAlternativeNameBuilder = new SubjectAlternativeNameBuilder();
-            subjectAlternativeNameBuilder.AddDnsName(hostname);
-            req.CertificateExtensions.Add(subjectAlternativeNameBuilder.Build());
-            req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DataEncipherment | X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature, false));        
-            req.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("2.5.29.32.0"), new Oid("1.3.6.1.5.5.7.3.1") }, false));
-            
-            X509Certificate2 selfSignedCert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
-            Console.Write($"Created self-signed certificate for \"{hostname}\" with thumbprint {selfSignedCert.Thumbprint}\n");
-            return selfSignedCert;
-        }
-        
+
         public static (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(X509Certificate2 certificate)
         {
             // Convert the certificate to PEM format
-            string certificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(certificate.RawData, Base64FormattingOptions.InsertLineBreaks)}\n-----END CERTIFICATE-----";
+            string certificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(certificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
 
             // Convert the private key to PEM format
             string privateKeyPem = ExportPrivateKeyToPem(certificate);
@@ -104,33 +80,18 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
         {
             AsymmetricAlgorithm privateKey = certificate.PrivateKey;
 
-            if (privateKey is RSA rsa)
+            if (privateKey is RSA or ECDsa)
             {
-                return ExportRSAPrivateKeyToPem(rsa);
+                byte[] pkcs8PrivateKey = certificate.PrivateKey.ExportPkcs8PrivateKey();
+                string pem = Convert.ToBase64String(pkcs8PrivateKey);
+                return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
             }
-            else if (privateKey is ECDsa ecdsa)
-            {
-                return ExportECDsaPrivateKeyToPem(ecdsa);
-            }
+            
             // Add support for other key types if needed
 
             throw new NotSupportedException("Unsupported private key algorithm");
         }
 
-        private static string ExportRSAPrivateKeyToPem(RSA rsa)
-        {
-            byte[] pkcs8PrivateKey = rsa.ExportPkcs8PrivateKey();
-            string pem = Convert.ToBase64String(pkcs8PrivateKey, Base64FormattingOptions.InsertLineBreaks);
-            return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-        }
-
-        private static string ExportECDsaPrivateKeyToPem(ECDsa ecdsa)
-        {
-            byte[] pkcs8PrivateKey = ecdsa.ExportPkcs8PrivateKey();
-            string pem = Convert.ToBase64String(pkcs8PrivateKey, Base64FormattingOptions.InsertLineBreaks);
-            return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-        }
-        
         public static X509Certificate2 CreateCACertificate(string subjectName)
         {
             var rsa = RSA.Create(4096);
@@ -158,29 +119,33 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             return new X509Certificate2(caCertificate.Export(X509ContentType.Pfx, "password"), "password",
                 X509KeyStorageFlags.Exportable);
         }
-        
+
         public static X509Certificate2 CreateSignedCertificate(X509Certificate2 caCertificate, string subjectName)
         {
             // Create a new RSA key pair for the new certificate
             RSA rsa = RSA.Create(2048);
 
             // Create a certificate request for the new certificate
-            CertificateRequest req = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            CertificateRequest req = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
 
             // Add basic extensions to the certificate request
             req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
-            req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+            req.CertificateExtensions.Add(
+                new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                    false));
             req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
 
             SubjectAlternativeNameBuilder sanBuilder = new SubjectAlternativeNameBuilder();
-            sanBuilder.AddDnsName("devvcsa.epicpki.local");
+            sanBuilder.AddDnsName(subjectName);
             req.CertificateExtensions.Add(sanBuilder.Build());
-            
+
             // Sign the certificate request with the root CA's private key
             var notBefore = DateTimeOffset.UtcNow.AddDays(-1);
             var notAfter = DateTimeOffset.UtcNow.AddYears(1);
 
-            X509Certificate2 signedCert = req.Create(caCertificate, notBefore, notAfter, req.PublicKey.EncodedKeyValue.RawData);
+            X509Certificate2 signedCert =
+                req.Create(caCertificate, notBefore, notAfter, req.PublicKey.EncodedKeyValue.RawData);
 
             return new X509Certificate2(signedCert.CopyWithPrivateKey(rsa));
         }

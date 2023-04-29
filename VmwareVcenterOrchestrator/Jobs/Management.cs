@@ -1,17 +1,9 @@
-using System;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Pkcs;
-using Org.BouncyCastle.Security;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
@@ -37,10 +29,10 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 {
                     case CertStoreOperationType.Add:
                         _logger.LogDebug("Adding certificate to Vcenter");
-
+                        
                         PerformAddition(config);
-
-                        _logger.LogDebug("Add operation complete.");
+                        
+                        _logger.LogDebug("Add operation complete");
 
                         result.Result = OrchestratorJobStatusJobResult.Success;
                         break;
@@ -70,97 +62,28 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
         {
             byte[] pkcs12CertBytes = Convert.FromBase64String(config.JobCertificate.Contents);
 
-            // Create a new MemoryStream from the byte array
-            MemoryStream stream = new MemoryStream(pkcs12CertBytes);
+            X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes, config.JobCertificate.PrivateKeyPassword, X509KeyStorageFlags.Exportable);
+            
+            (string certificatePem, string privateKeyPem) = ConvertCertificateToPemStrings(certificate);
 
-            // Create a new Pkcs12Store from the stream and password
-            Pkcs12Store pkcs12Store = new Pkcs12Store(stream, config.JobCertificate.PrivateKeyPassword.ToCharArray());
-
-            // Extract the certificate, private key, and root CA
-            string certificatePem = null;
-            string pemPrivateKey = null;
-            string rootCertificatePem = null;
-
-            foreach (string alias in pkcs12Store.Aliases)
-            {
-                if (pkcs12Store.IsKeyEntry(alias))
-                {
-                    X509CertificateEntry certEntry = pkcs12Store.GetCertificate(alias);
-                    var cert = certEntry.Certificate;
-                    X509Certificate2 certificate = new X509Certificate2(cert.GetEncoded());
-                    certificatePem =
-                        $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(certificate.RawData, Base64FormattingOptions.InsertLineBreaks)}\n-----END CERTIFICATE-----";
-
-
-                    AsymmetricKeyEntry keyEntry = pkcs12Store.GetKey(alias);
-                    var key = keyEntry.Key;
-                    RsaPrivateCrtKeyParameters rsaPrivateKey = (RsaPrivateCrtKeyParameters)key;
-
-                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-
-                    RSAParameters rsaParameters = new RSAParameters
-                    {
-                        Modulus = rsaPrivateKey.Modulus.ToByteArrayUnsigned(),
-                        Exponent = rsaPrivateKey.PublicExponent.ToByteArrayUnsigned(),
-                        P = rsaPrivateKey.P.ToByteArrayUnsigned(),
-                        Q = rsaPrivateKey.Q.ToByteArrayUnsigned(),
-                        DP = rsaPrivateKey.DP.ToByteArrayUnsigned(),
-                        DQ = rsaPrivateKey.DQ.ToByteArrayUnsigned(),
-                        InverseQ = rsaPrivateKey.QInv.ToByteArrayUnsigned(),
-                        D = rsaPrivateKey.Exponent.ToByteArrayUnsigned()
-                    };
-
-                    rsa.ImportParameters(rsaParameters);
-                    byte[] pkcs8PrivateKey = rsa.ExportRSAPrivateKey();
-                    string pem = Convert.ToBase64String(pkcs8PrivateKey, Base64FormattingOptions.InsertLineBreaks);
-                    pemPrivateKey = $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-                    
-
-                    /*StringWriter stringWriter = new StringWriter();
-                    PemWriter pemWriter = new PemWriter(stringWriter);
-                    pemWriter.WriteObject(privateKey);
-                    pemWriter.Writer.Flush();
-                    pemPrivateKey = stringWriter.ToString();
-                    pemPrivateKey = pemPrivateKey
-                        .Replace("-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----")
-                        .Replace("-----END RSA PRIVATE KEY-----", "-----END PRIVATE KEY-----");*/
-
-                    break;
-                }
-                else if (pkcs12Store.IsCertificateEntry(alias))
-                {
-                    X509CertificateEntry certEntry = pkcs12Store.GetCertificate(alias);
-                    // Create an X509Certificate2 object from the certificate entry
-                    X509Certificate2 certificate = new X509Certificate2(certEntry.Certificate.GetEncoded());
-
-                    if (certificate.Subject == certificate.Issuer)
-                    {
-                        rootCertificatePem =
-                            $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(certificate.RawData, Base64FormattingOptions.InsertLineBreaks)}\n-----END CERTIFICATE-----";
-                    }
-                }
-                else
-                {
-                    _logger.LogDebug("PFX cert has no contents");
-                }
-            }
-
+            string caCertificatePem = ExtractRootCAtoPemString(certificate);
+            
             VcenterCertificateManagementVcenterTlsSet certReq = new VcenterCertificateManagementVcenterTlsSet
             {
                 cert = certificatePem,
-                key = pemPrivateKey,
-                root_cert = rootCertificatePem
+                key = privateKeyPem,
+                root_cert = caCertificatePem
             };
-
-            VcenterClient.AddVcenterSslCertificate(certReq);
+            
+            _logger.LogDebug("Adding certificate to vCenter");
+            VcenterClient.ReplaceVcenterSslCertificate(certReq);
         }
 
         public static (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(
             X509Certificate2 cert)
         {
             // Convert the certificate to PEM format
-            string certificatePem =
-                $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(cert.RawData, Base64FormattingOptions.InsertLineBreaks)}\n-----END CERTIFICATE-----";
+            string certificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(cert.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
 
             // Convert the private key to PEM format
             string privateKeyPem = ExportPrivateKeyToPem(cert);
@@ -168,54 +91,49 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             return (certificatePem, privateKeyPem);
         }
 
-        public static X509Certificate2 GetRootCA(X509Certificate2 cert)
+        public string ExtractRootCAtoPemString(X509Certificate2 cert)
         {
-            // Get the root CA from the certificate chain
-            X509Chain chain = new X509Chain();
-            chain.Build(cert);
+            // Get the issuer's distinguished name (DN)
+            string issuerDn = cert.Issuer;
 
-            X509Certificate2 rootCA = null;
-            foreach (X509ChainElement element in chain.ChainElements)
+            X509Store store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadOnly);
+
+            // Find the issuer certificate by DN
+            X509Certificate2Collection issuerCertificates = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, issuerDn, false);
+            string caCertificatePem = string.Empty;
+            if (issuerCertificates.Count > 0)
             {
-                if (element.Certificate.Subject == element.Certificate.Issuer)
-                {
-                    rootCA = element.Certificate;
-                    break;
-                }
+                X509Certificate2 issuerCertificate = issuerCertificates[0];
+                caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(issuerCertificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
+            }
+            else
+            {
+                _logger.LogDebug("The root CA information for {0} cannot be found.", cert.FriendlyName);
             }
 
-            return rootCA;
+            store.Close();
+            
+            return caCertificatePem;
+
         }
 
         private static string ExportPrivateKeyToPem(X509Certificate2 certificate)
         {
             AsymmetricAlgorithm privateKey = certificate.PrivateKey;
 
-            if (privateKey is RSA rsa)
+            if (privateKey is RSA or ECDsa)
             {
-                return ExportRSAPrivateKeyToPem(rsa);
+                byte[] pkcs8PrivateKey = certificate.PrivateKey.ExportPkcs8PrivateKey();
+                string pem = Convert.ToBase64String(pkcs8PrivateKey);
+                return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
             }
-            else if (privateKey is ECDsa ecdsa)
-            {
-                return ExportECDsaPrivateKeyToPem(ecdsa);
-            }
+            
             // Add support for other key types if needed
 
             throw new NotSupportedException("Unsupported private key algorithm");
         }
-
-        private static string ExportRSAPrivateKeyToPem(RSA rsa)
-        {
-            byte[] pkcs8PrivateKey = rsa.ExportPkcs8PrivateKey();
-            string pem = Convert.ToBase64String(pkcs8PrivateKey, Base64FormattingOptions.InsertLineBreaks);
-            return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-        }
-
-        private static string ExportECDsaPrivateKeyToPem(ECDsa ecdsa)
-        {
-            byte[] pkcs8PrivateKey = ecdsa.ExportPkcs8PrivateKey();
-            string pem = Convert.ToBase64String(pkcs8PrivateKey, Base64FormattingOptions.InsertLineBreaks);
-            return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-        }
     }
+    
+    
 }

@@ -55,7 +55,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             sslCertResp.Wait();
             var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp.Result);
             
-            // ApplicationGatewaySslCertificate is in PEM format
+            // Vcenter certs are in PEM format
             //Remove the BEGIN/END
             SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
            
@@ -75,15 +75,19 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             return inventoryItems;
         }
 
-        public void AddVcenterSslCertificate(VcenterCertificateManagementVcenterTlsSet cert)
+        public void ReplaceVcenterSslCertificate(VcenterCertificateManagementVcenterTlsSet cert)
         {
             var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
             response.Wait();
-            var sslCertResp = response.Result.Content.ReadAsStringAsync();
-            sslCertResp.Wait();
-            var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp.Result);
+            if (response.Result.StatusCode.ToString() != "204")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
         }
+        
     }
 }
