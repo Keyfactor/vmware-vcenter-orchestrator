@@ -1,3 +1,4 @@
+using System.Collections;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 using System.Net.Http.Headers;
@@ -44,10 +45,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             return apiKeyTask.Result.Trim('\"');
         }
 
-        public IEnumerable<CurrentInventoryItem> GetVcenterSslCertificate() 
+        public VcenterCertificateManagementVcenterTlsInfo GetVcenterSslCertificate() 
         {
-            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
-
             //This endpoint does not return certificate chains
             var response = VcenterClient.GetAsync("/api/vcenter/certificate-management/vcenter/tls");
             response.Wait();
@@ -55,24 +54,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             sslCertResp.Wait();
             var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp.Result);
             
-            // Vcenter certs are in PEM format
-            //Remove the BEGIN/END
-            SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
-           
-            // Create new inventory item for the certificate
-            List<string> certList = new List<string>{ SslCert.cert };
-            
-            CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
-            {
-                Alias = SslCert.subject_alternative_name[0],
-                PrivateKeyEntry = false,
-                ItemStatus = OrchestratorInventoryItemStatus.Unknown,
-                UseChainLevel = true,
-                Certificates = certList
-            };
-            inventoryItems.Add(inventoryItem);
-
-            return inventoryItems;
+            return SslCert;
         }
 
         public void ReplaceVcenterSslCertificate(VcenterCertificateManagementVcenterTlsSet cert)
@@ -89,5 +71,58 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
         }
         
+        public void RemoveVcenterTrustedRoot(string chain)
+        {
+            string request = "/api/vcenter/certificate-management/vcenter/trusted-root-chains/" + chain;
+            var response = VcenterClient.DeleteAsync(request);
+            response.Wait();
+            if (response.Result.StatusCode.ToString() != "204")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
+        }
+        
+        public List<string> GetVcenterTrustedRootChains()
+        {
+            var response = VcenterClient.GetAsync("/api/vcenter/certificate-management/vcenter/trusted-root-chains/");
+            response.Wait();
+            if (response.Result.StatusCode.ToString() != "OK")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
+
+            var responseContent = response.Result.Content.ReadAsStringAsync();
+            responseContent.Wait();
+            List<VcenterCertificateManagementVcenterTrustedRootChainsSummary> trustedRoots = JsonConvert.DeserializeObject<List<VcenterCertificateManagementVcenterTrustedRootChainsSummary>>(responseContent.Result);
+            List<string> chains = new List<string>();
+            foreach (VcenterCertificateManagementVcenterTrustedRootChainsSummary trustedRoot in trustedRoots)
+            {
+                chains.Add(trustedRoot.chain);
+            }
+
+            return chains;
+        }
+
+        public VcenterCertificateManagementVcenterTrustedRootChainsInfo GetVcenterTrustedRootChain(string chain)
+        {
+            string request = "/api/vcenter/certificate-management/vcenter/trusted-root-chains/" + chain;
+            var response = VcenterClient.GetAsync(request);
+            response.Wait();
+            if (response.Result.StatusCode.ToString() != "OK")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
+            
+            var responseContent = response.Result.Content.ReadAsStringAsync();
+            responseContent.Wait();
+            VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTrustedRootChainsInfo>(responseContent.Result);
+            return trustedRootInfo;
+        }
     }
 }

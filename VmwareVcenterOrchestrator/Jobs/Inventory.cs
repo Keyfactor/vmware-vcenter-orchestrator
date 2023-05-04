@@ -36,11 +36,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
             Initialize(config.CertificateStoreDetails);
 
-            List<CurrentInventoryItem> inventoryItems;
+            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
 
             try
             {
-                inventoryItems = VcenterClient.GetVcenterSslCertificate().ToList();
+                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate()).ToList();
+
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting vCenter SSL Certificate:\n" + ex.Message);
@@ -54,6 +55,29 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             
             result.Result = OrchestratorJobStatusJobResult.Success;
             return result;
+        }
+
+        public IEnumerable<CurrentInventoryItem> FormatSslCert(VcenterCertificateManagementVcenterTlsInfo SslCert)
+        {
+            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
+            
+            // Vcenter certs are in PEM format
+            //Remove the BEGIN/END
+            SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
+           
+            // Create new inventory item for the certificate
+            List<string> certList = new List<string>{ SslCert.cert };
+            
+            CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
+            {
+                Alias = SslCert.subject_alternative_name[0], //.subject_dn, 
+                PrivateKeyEntry = false,
+                ItemStatus = OrchestratorInventoryItemStatus.Unknown,
+                UseChainLevel = true,
+                Certificates = certList
+            };
+            inventoryItems.Add(inventoryItem);
+            return inventoryItems;
         }
     }
 }

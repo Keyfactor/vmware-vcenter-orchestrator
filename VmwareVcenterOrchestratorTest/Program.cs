@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
+using Keyfactor.Orchestrators.Common.Enums;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Program
 {
@@ -14,7 +15,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             Program p = new Program();
 
             p.TestGetSslCertificate();
-            
+
             string caSubjectName = Environment.GetEnvironmentVariable("VCENTER_CA_SUBJECT_NAME") ?? string.Empty;
             X509Certificate2 caCertificate = CreateCACertificate(caSubjectName);
             string caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(caCertificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
@@ -32,6 +33,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             };
             
             p.TestAddCertificate(certReq);
+            p.TestRemoveCertificate(signedCertificate);
         }
 
         public Program()
@@ -53,7 +55,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
         public void TestGetSslCertificate()
         {
             Console.Write("Getting Vcenter Certificates...\n");
-            foreach (CurrentInventoryItem inventoryItem in Client.GetVcenterSslCertificate())
+            foreach (CurrentInventoryItem inventoryItem in FormatSslCert(Client.GetVcenterSslCertificate()).ToList())
             {
                 Console.Write($"Found certificate called {inventoryItem.Alias}\n");
             }
@@ -63,6 +65,13 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
         {
             Console.Write("Adding Vcenter Certificate...\n");
             Client.ReplaceVcenterSslCertificate(newCert);
+            Console.Write($"Added certificate\n");
+        }
+        
+        public void TestRemoveCertificate(X509Certificate2 cert)
+        {
+            Console.Write("Removing Vcenter Certificate...\n");
+            //TODO
         }
 
         public static (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(X509Certificate2 certificate)
@@ -148,6 +157,40 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
                 req.Create(caCertificate, notBefore, notAfter, req.PublicKey.EncodedKeyValue.RawData);
 
             return new X509Certificate2(signedCert.CopyWithPrivateKey(rsa));
+        }
+        
+        public string GetTrustedRootChainIdentifier(X509Certificate2 certificate)
+        {
+            X509Chain chain = new X509Chain();
+            chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            chain.Build(certificate);
+
+            X509Certificate2 rootCertificate = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+
+            return rootCertificate.Thumbprint;
+        }
+        
+        public IEnumerable<CurrentInventoryItem> FormatSslCert(VcenterCertificateManagementVcenterTlsInfo SslCert)
+        {
+            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
+            
+            // Vcenter certs are in PEM format
+            //Remove the BEGIN/END
+            SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
+           
+            // Create new inventory item for the certificate
+            List<string> certList = new List<string>{ SslCert.cert };
+            
+            CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
+            {
+                Alias = SslCert.subject_alternative_name[0], //.subject_dn, 
+                PrivateKeyEntry = false,
+                ItemStatus = OrchestratorInventoryItemStatus.Unknown,
+                UseChainLevel = true,
+                Certificates = certList
+            };
+            inventoryItems.Add(inventoryItem);
+            return inventoryItems;
         }
     }
 }

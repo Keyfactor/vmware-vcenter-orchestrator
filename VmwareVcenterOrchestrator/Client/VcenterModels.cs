@@ -24,3 +24,18 @@ public struct VcenterCertificateManagementVcenterTlsSet
     public string key;
     public string root_cert;
 }
+
+public struct VcenterCertificateManagementVcenterTrustedRootChainsSummary
+{
+    public string chain;
+}
+
+public struct VcenterCertificateManagementVcenterTrustedRootChainsInfo
+{
+    public VcenterCertificateManagementX509CertChain cert_chain;
+}
+
+public struct VcenterCertificateManagementX509CertChain
+{
+    public List<string> cert_chain;
+}

@@ -36,14 +36,14 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
                         result.Result = OrchestratorJobStatusJobResult.Success;
                         break;
-                    //case CertStoreOperationType.Remove:
-                    //_logger.LogDebug("Removing certificate from App Gateway");
+                    case CertStoreOperationType.Remove:
+                        _logger.LogDebug("Removing certificate from App Gateway");
 
-                    //GatewayClient.RemoveAppGatewaySslCertificate(config.JobCertificate.Alias);
+                        PerformRemove(config);
 
-                    //_logger.LogDebug("Remove operation complete.");
-                    //result.Result = OrchestratorJobStatusJobResult.Success;
-                    //break;
+                        _logger.LogDebug("Remove operation complete.");
+                        result.Result = OrchestratorJobStatusJobResult.Success;
+                        break;
                     default:
                         _logger.LogDebug("Invalid management operation type: {0}", config.OperationType);
                         throw new ArgumentOutOfRangeException();
@@ -115,7 +115,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             store.Close();
             
             return caCertificatePem;
-
         }
 
         private static string ExportPrivateKeyToPem(X509Certificate2 certificate)
@@ -133,7 +132,48 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
             throw new NotSupportedException("Unsupported private key algorithm");
         }
+
+        public void PerformRemove(ManagementJobConfiguration config)
+        {
+            //assuming the cert to remove is the ssl cert, we want to remove it's trusted root
+            var sslCert = VcenterClient.GetVcenterSslCertificate();
+            string sslCertIssuerCn = string.Empty;
+            if (sslCert.subject_alternative_name[0] == config.JobCertificate.Alias)
+            {
+                //assuming the trusted root is the same as the issuer for the ssl cert
+                X500DistinguishedName sslCertIssuer = new X500DistinguishedName(sslCert.issuer_dn);
+                sslCertIssuerCn = sslCertIssuer.Name.Split(',')[0].TrimStart("CN=".ToCharArray());
+            }
+            
+            //retrieve the trusted root information
+            List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains();
+            foreach (string trustedRootChain in trustedRootChains)
+            {
+                VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo = VcenterClient.GetVcenterTrustedRootChain(trustedRootChain);
+                
+                //Format the retrieved trusted root chain certificate
+                //Remove X509 CRL Cert if it exists
+                string trimPoint = "\n-----END CERTIFICATE-----";
+                int index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(trimPoint);
+                string trustedRootCert = string.Empty;
+                if (index >= 0)
+                {
+                    trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
+                }
+                byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
+                X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
+                
+                // Extract the CN from the issuer field
+                X500DistinguishedName issuerName = new X500DistinguishedName(certificate.Issuer);
+                string cn = issuerName.Name.Split(',')[0].TrimStart("CN=".ToCharArray());
+                
+                //check if the trusted root matches the issuer of the ssl cert
+                if (cn == sslCertIssuerCn)
+                {
+                    VcenterClient.RemoveVcenterTrustedRoot(trustedRootChain);
+                    break;
+                }
+            }
+        }
     }
-    
-    
 }
