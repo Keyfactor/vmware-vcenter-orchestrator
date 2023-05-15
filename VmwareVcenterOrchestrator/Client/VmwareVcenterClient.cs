@@ -63,12 +63,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
             response.Wait();
-            if (response.Result.StatusCode.ToString() != "204")
-            {
-                var errorMessage = response.Result.Content.ReadAsStringAsync();
-                errorMessage.Wait();
-                throw new Exception(errorMessage.ToString());
-            }
+            //if (response.Result.StatusCode.ToString() != "204")
+            //{
+                //var errorMessage = response.Result.Content.ReadAsStringAsync();
+                //errorMessage.Wait();
+                //throw new Exception(errorMessage.ToString());
+            //}
         }
         
         public void RemoveVcenterTrustedRoot(string chain)

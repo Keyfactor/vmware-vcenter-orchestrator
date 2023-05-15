@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
@@ -41,6 +42,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             try
             {
                 inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate()).ToList();
+                List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains();
+                foreach (string trustedRootChain in trustedRootChains)
+                {
+                    CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetVcenterTrustedRootChain(trustedRootChain));
+                    inventoryItems.Add(trustedRootInventoryItem);
+                }
 
             } catch (Exception ex)
             {
@@ -78,6 +85,37 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             };
             inventoryItems.Add(inventoryItem);
             return inventoryItems;
+        }
+        
+        public CurrentInventoryItem FormatTrustedRoot(VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo)
+        {
+            //Format the retrieved trusted root chain certificate
+            //Remove X509 CRL Cert if it exists
+            string trimPoint = "\n-----END CERTIFICATE-----";
+            int index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(trimPoint);
+            string trustedRootCert = string.Empty;
+            if (index >= 0)
+            {
+                trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
+            } 
+            byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
+            X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
+                
+            // Extract the CN
+            string cn = certificate.SubjectName.Name.Split(',')[0].TrimStart("CN=".ToCharArray());
+
+            // Create new inventory item for the certificate
+            List<string> certList = new List<string>{ Convert.ToBase64String(certificate.RawData) };
+            
+            CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
+            {
+                Alias = cn, 
+                PrivateKeyEntry = false,
+                ItemStatus = OrchestratorInventoryItemStatus.Unknown,
+                UseChainLevel = true,
+                Certificates = certList
+            };
+            return inventoryItem;
         }
     }
 }
