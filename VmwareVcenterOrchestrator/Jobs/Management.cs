@@ -135,16 +135,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         public void PerformRemove(ManagementJobConfiguration config)
         {
-            //assuming the cert to remove is the ssl cert, we want to remove it's trusted root
-            var sslCert = VcenterClient.GetVcenterSslCertificate();
-            string sslCertIssuerCn = string.Empty;
-            if (sslCert.subject_alternative_name[0] == config.JobCertificate.Alias)
-            {
-                //assuming the trusted root is the same as the issuer for the ssl cert
-                X500DistinguishedName sslCertIssuer = new X500DistinguishedName(sslCert.issuer_dn);
-                sslCertIssuerCn = sslCertIssuer.Name.Split(',')[0].TrimStart("CN=".ToCharArray());
-            }
-            
             //retrieve the trusted root information
             List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains();
             foreach (string trustedRootChain in trustedRootChains)
@@ -163,12 +153,25 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
                 X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
                 
-                // Extract the CN from the issuer field
-                X500DistinguishedName issuerName = new X500DistinguishedName(certificate.Issuer);
-                string cn = issuerName.Name.Split(',')[0].TrimStart("CN=".ToCharArray());
+                // Extract the CN from the subject name, if there is a CN
+                string name = string.Empty;
+                string[] subjectDn = certificate.SubjectName.Name.Split(',');
+                for (int i = 0; i < subjectDn.Length; i++)
+                {
+                    if (subjectDn[i].Contains("CN="))
+                    {
+                        name = subjectDn[i].Trim().TrimStart("CN=".ToCharArray());
+                        break;
+                    } 
                 
-                //check if the trusted root matches the issuer of the ssl cert
-                if (cn == sslCertIssuerCn)
+                    if (i == subjectDn.Length - 1)
+                    {
+                        name = certificate.SubjectName.Name;
+                    }
+                }
+
+                //check if the trusted root alias matches the job alias
+                if (name == config.JobCertificate.Alias)
                 {
                     VcenterClient.RemoveVcenterTrustedRoot(trustedRootChain);
                     break;

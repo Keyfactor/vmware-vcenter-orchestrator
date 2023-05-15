@@ -41,6 +41,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
             try
             {
+                //inventory ssl certificate and trusted root certificates
                 inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate()).ToList();
                 List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains();
                 foreach (string trustedRootChain in trustedRootChains)
@@ -74,10 +75,26 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
            
             // Create new inventory item for the certificate
             List<string> certList = new List<string>{ SslCert.cert };
+
+            string name = string.Empty;
+            string[] subjectDn = SslCert.subject_dn.Split(',');
+            for (int i = 0; i < subjectDn.Length; i++)
+            {
+                if (subjectDn[i].Contains("CN="))
+                {
+                    name = subjectDn[i].Trim().TrimStart("CN=".ToCharArray());
+                    break;
+                } 
+                
+                if (i == subjectDn.Length - 1)
+                {
+                    name = SslCert.subject_dn;
+                }
+            }
             
             CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
             {
-                Alias = SslCert.subject_alternative_name[0], //.subject_dn, 
+                Alias = name,  
                 PrivateKeyEntry = false,
                 ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                 UseChainLevel = true,
@@ -90,7 +107,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
         public CurrentInventoryItem FormatTrustedRoot(VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo)
         {
             //Format the retrieved trusted root chain certificate
-            //Remove X509 CRL Cert if it exists
+            //Remove attached X509 CRL Cert if it exists
             string trimPoint = "\n-----END CERTIFICATE-----";
             int index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(trimPoint);
             string trustedRootCert = string.Empty;
