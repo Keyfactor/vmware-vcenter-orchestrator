@@ -63,7 +63,20 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
             response.Wait();
-            if (response.Result.StatusCode.ToString() != "204")
+
+            //parse status code for error handling
+            string statusCode = string.Empty;
+            string[] respMessage = response.Result.ToString().Split(',');
+            for (int i = 0; i < respMessage.Length; i++)
+            {
+                if (respMessage[i].Contains("StatusCode:"))
+                {
+                    statusCode = respMessage[i].Trim().Substring("StatsCode: ".Length).Trim();
+                    break;
+                }
+            }
+            
+            if (statusCode != "204")
             {
                 var errorMessage = response.Result.Content.ReadAsStringAsync();
                 errorMessage.Wait();
@@ -76,12 +89,25 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             string request = "/api/vcenter/certificate-management/vcenter/trusted-root-chains/" + chain;
             var response = VcenterClient.DeleteAsync(request);
             response.Wait();
-            //if (response.Result.StatusCode.ToString() != "204")
-            //{
-            //    var errorMessage = response.Result.Content.ReadAsStringAsync();
-            //    errorMessage.Wait();
-            //    throw new Exception(errorMessage.ToString());
-            //}
+            
+            //parse status code for error handling
+            string statusCode = string.Empty;
+            string[] respMessage = response.Result.ToString().Split(',');
+            for (int i = 0; i < respMessage.Length; i++)
+            {
+                if (respMessage[i].Contains("StatusCode:"))
+                {
+                    statusCode = respMessage[i].Trim().Substring("StatsCode: ".Length).Trim();
+                    break;
+                }
+            }
+            
+            if (statusCode != "204")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
         }
         
         public List<string> GetVcenterTrustedRootChains()
