@@ -63,7 +63,10 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
             response.Wait();
-
+            
+            //give the server time to update with the new certificate before checking for success
+            Task.Delay(TimeSpan.FromMinutes(3)).Wait();
+            
             //parse status code for error handling
             string statusCode = string.Empty;
             string[] respMessage = response.Result.ToString().Split(',');
