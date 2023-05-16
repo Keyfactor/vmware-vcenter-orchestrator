@@ -160,7 +160,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 {
                     if (subjectDn[i].Contains("CN="))
                     {
-                        name = subjectDn[i].Trim().TrimStart("CN=".ToCharArray());
+                        name = subjectDn[i].Substring("CN=".Length);
                         break;
                     } 
                 
