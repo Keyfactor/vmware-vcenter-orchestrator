@@ -39,3 +39,9 @@ public struct VcenterCertificateManagementX509CertChain
 {
     public List<string> cert_chain;
 }
+
+public struct VcenterCertificateManagementVcenterTrustedRootChainsCreate
+{
+    public VcenterCertificateManagementX509CertChain cert_chain;
+    public string chain;
+}

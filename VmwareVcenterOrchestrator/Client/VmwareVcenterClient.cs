@@ -63,12 +63,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             var response = VcenterClient.PutAsync("/api/vcenter/certificate-management/vcenter/tls", request);
             response.Wait();
-            //if (response.Result.StatusCode.ToString() != "204")
-            //{
-                //var errorMessage = response.Result.Content.ReadAsStringAsync();
-                //errorMessage.Wait();
-                //throw new Exception(errorMessage.ToString());
-            //}
+            if (response.Result.StatusCode.ToString() != "204")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
         }
         
         public void RemoveVcenterTrustedRoot(string chain)
@@ -76,12 +76,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             string request = "/api/vcenter/certificate-management/vcenter/trusted-root-chains/" + chain;
             var response = VcenterClient.DeleteAsync(request);
             response.Wait();
-            if (response.Result.StatusCode.ToString() != "204")
-            {
-                var errorMessage = response.Result.Content.ReadAsStringAsync();
-                errorMessage.Wait();
-                throw new Exception(errorMessage.ToString());
-            }
+            //if (response.Result.StatusCode.ToString() != "204")
+            //{
+            //    var errorMessage = response.Result.Content.ReadAsStringAsync();
+            //    errorMessage.Wait();
+            //    throw new Exception(errorMessage.ToString());
+            //}
         }
         
         public List<string> GetVcenterTrustedRootChains()
@@ -123,6 +123,20 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             responseContent.Wait();
             VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTrustedRootChainsInfo>(responseContent.Result);
             return trustedRootInfo;
+        }
+        
+        public void AddVcenterTrustedRoot(VcenterCertificateManagementVcenterTrustedRootChainsCreate trustedRootChain)
+        {
+            var jsonTrustedRootChain = JsonConvert.SerializeObject(trustedRootChain);
+            var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
+            var response = VcenterClient.PostAsync("/api/vcenter/certificate-management/vcenter/trusted-root-chains", request);
+            response.Wait();
+            if (response.Result.StatusCode.ToString() != "Created")
+            {
+                var errorMessage = response.Result.Content.ReadAsStringAsync();
+                errorMessage.Wait();
+                throw new Exception(errorMessage.ToString());
+            }
         }
     }
 }

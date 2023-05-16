@@ -82,7 +82,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             {
                 if (subjectDn[i].Contains("CN="))
                 {
-                    name = subjectDn[i].Substring("CN=".Length);
+                    name = subjectDn[i].Trim().Substring("CN=".Length);
                     break;
                 } 
                 
@@ -125,7 +125,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             {
                 if (subjectDn[i].Contains("CN="))
                 {
-                    name = subjectDn[i].Substring("CN=".Length); 
+                    name = subjectDn[i].Trim().Substring("CN=".Length); 
                     break;
                 } 
                 

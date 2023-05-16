@@ -29,9 +29,16 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 {
                     case CertStoreOperationType.Add:
                         _logger.LogDebug("Adding certificate to Vcenter");
-                        
-                        PerformAddition(config);
-                        
+
+                        if (string.IsNullOrEmpty(config.JobCertificate.PrivateKeyPassword))
+                        {
+                            PerformTrustedRootAddition(config);
+                        }
+                        else
+                        {
+                            PerformSslReplacement(config);
+                        }
+
                         _logger.LogDebug("Add operation complete");
 
                         result.Result = OrchestratorJobStatusJobResult.Success;
@@ -42,6 +49,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                         PerformRemove(config);
 
                         _logger.LogDebug("Remove operation complete.");
+                        
                         result.Result = OrchestratorJobStatusJobResult.Success;
                         break;
                     default:
@@ -58,7 +66,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             return result;
         }
 
-        private void PerformAddition(ManagementJobConfiguration config)
+        private void PerformSslReplacement(ManagementJobConfiguration config)
         {
             byte[] pkcs12CertBytes = Convert.FromBase64String(config.JobCertificate.Contents);
 
@@ -77,6 +85,21 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             
             _logger.LogDebug("Adding certificate to vCenter");
             VcenterClient.ReplaceVcenterSslCertificate(certReq);
+        }
+
+        private void PerformTrustedRootAddition(ManagementJobConfiguration config)
+        {
+            VcenterCertificateManagementX509CertChain certContents = new VcenterCertificateManagementX509CertChain
+            {
+                cert_chain = new List<string>{ $"-----BEGIN CERTIFICATE-----\n{config.JobCertificate.Contents}\n-----END CERTIFICATE-----" }
+            };
+            
+            VcenterCertificateManagementVcenterTrustedRootChainsCreate req = new VcenterCertificateManagementVcenterTrustedRootChainsCreate
+            {
+                cert_chain = certContents,
+            };
+            
+            VcenterClient.AddVcenterTrustedRoot(req);
         }
 
         public static (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(
@@ -160,7 +183,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 {
                     if (subjectDn[i].Contains("CN="))
                     {
-                        name = subjectDn[i].Substring("CN=".Length);
+                        name = subjectDn[i].Trim().Substring("CN=".Length);
                         break;
                     } 
                 
