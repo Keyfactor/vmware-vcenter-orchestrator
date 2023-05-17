@@ -1,33 +1,29 @@
 # VMware vCenter Orchestrator
 
-The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware that allows Keyfactor to manage VMware vCenter certificates.
+The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.
 
-#### Integration status: Prototype - Demonstration quality. Not for use in customer environments.
+#### Integration status: Production - Ready for use in production environments.
 
+## About the Keyfactor Universal Orchestrator Extension
 
+This repository contains a Universal Orchestrator Extension which is a plugin to the Keyfactor Universal Orchestrator. Within the Keyfactor Platform, Orchestrators are used to manage “certificate stores” &mdash; collections of certificates and roots of trust that are found within and used by various applications.
 
-## About the Keyfactor Universal Orchestrator Capability
+The Universal Orchestrator is part of the Keyfactor software distribution and is available via the Keyfactor customer portal. For general instructions on installing Extensions, see the “Keyfactor Command Orchestrator Installation and Configuration Guide” section of the Keyfactor documentation. For configuration details of this specific Extension see below in this readme.
 
-This repository contains a Universal Orchestrator Capability which is a plugin to the Keyfactor Universal Orchestrator. Within the Keyfactor Platform, Orchestrators are used to manage “certificate stores” — collections of certificates and roots of trust that are found within and used by various applications.
-
-The Universal Orchestrator is part of the Keyfactor software distribution and is available via the Keyfactor customer portal. For general instructions on installing Capabilities, see the “Keyfactor Command Orchestrator Installation and Configuration Guide” section of the Keyfactor documentation. For configuration details of this specific Capability, see below in this readme.
-
-The Universal Orchestrator is the successor to the Windows Orchestrator. This Capability plugin only works with the Universal Orchestrator and does not work with the Windows Orchestrator.
+The Universal Orchestrator is the successor to the Windows Orchestrator. This Orchestrator Extension plugin only works with the Universal Orchestrator and does not work with the Windows Orchestrator.
 
 
 
-## Support for the VMware vCenter Orchestrator
+## Support for VMware vCenter Orchestrator
 
-#### Note: The Keyfactor Universal Orchestrator only supports vCenter version 7.0 and up.
-
-The VMware vCenter Orchestrator is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket with your Keyfactor representative.
+VMware vCenter Orchestrator is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket with your Keyfactor representative.
 
 ###### To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
-___
 
 
 
 ---
+
 
 
 
@@ -39,13 +35,16 @@ The Keyfactor Universal Orchestrator may be installed on either Windows or Linux
 |Supports Management Add|&check; |&check; |
 |Supports Management Remove|&check; |&check; |
 |Supports Create Store|  |  |
-|Supports Discovery| | |
+|Supports Discovery|  |  |
 |Supports Renrollment|  |  |
 |Supports Inventory|&check; |&check; |
 
 
 
+
+
 ---
+
 
 ## Overview
 
@@ -156,3 +155,4 @@ fill the displayed form with the following values:
 ### Important note about Trusted Root Chain Removal
 
 Trusted root chains can be added and removed from the vCenter certificate store through the orchestrator. Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.
+
