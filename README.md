@@ -39,7 +39,7 @@ The Keyfactor Universal Orchestrator may be installed on either Windows or Linux
 |Supports Management Add|&check; |&check; |
 |Supports Management Remove|&check; |&check; |
 |Supports Create Store|  |  |
-|Supports Discovery|&check; |&check; |
+|Supports Discovery| | |
 |Supports Renrollment|  |  |
 |Supports Inventory|&check; |&check; |
 
@@ -155,4 +155,4 @@ fill the displayed form with the following values:
 
 ### Important note about Trusted Root Chain Removal
 
-Trusted root chains can be added and removed from the vCenter certificate store through the orchestrator. Note that the vCenter instance will be put into a bad state if the SSL certificate's trusted root of the corresponding vSphere server is deleted from the certificate store.
+Trusted root chains can be added and removed from the vCenter certificate store through the orchestrator. Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.
