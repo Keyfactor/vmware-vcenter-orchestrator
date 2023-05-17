@@ -76,25 +76,25 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             // Create new inventory item for the certificate
             List<string> certList = new List<string>{ sslCert.cert };
 
-            // parse the CN for the alias
-            //string name = string.Empty;
-            //string[] subjectDn = sslCert.subject_dn.Split(',');
-            //for (int i = 0; i < subjectDn.Length; i++)
-            //{
-            //    if (subjectDn[i].Contains("CN="))
-            //    {
-            //        name = subjectDn[i].Trim().Substring("CN=".Length);
-            //        break;
-            //    } 
-            //    if (i == subjectDn.Length - 1)
-            //    {
-            //        name = sslCert.subject_dn;
-            //    }
-            //}
+            string name = string.Empty;
+            string[] subjectDn = sslCert.subject_dn.Split(',');
+            for (int i = 0; i < subjectDn.Length; i++)
+            {
+                if (subjectDn[i].Contains("CN="))
+                {
+                    name = subjectDn[i].Trim().Substring("CN=".Length);
+                    break;
+                } 
+                
+                if (i == subjectDn.Length - 1)
+                {
+                    name = sslCert.subject_dn;
+                }
+            }
             
             CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
             {
-                Alias = sslCert.thumbprint,  
+                Alias = name,  
                 PrivateKeyEntry = false,
                 ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                 UseChainLevel = true,
@@ -118,28 +118,29 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
             X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
                 
-            // Extract the CN for the Alias
-            //string name = string.Empty;
-            //string[] subjectDn = certificate.SubjectName.Name.Split(',');
-            //for (int i = 0; i < subjectDn.Length; i++)
-            //{
-            //    if (subjectDn[i].Contains("CN="))
-            //    {
-            //        name = subjectDn[i].Trim().Substring("CN=".Length); 
-            //        break;
-            //    }
-            //    if (i == subjectDn.Length - 1)
-            //    {
-            //        name = certificate.SubjectName.Name;
-            //    }
-            //}
+            // Extract the CN if there is one in the subject name
+            string name = string.Empty;
+            string[] subjectDn = certificate.SubjectName.Name.Split(',');
+            for (int i = 0; i < subjectDn.Length; i++)
+            {
+                if (subjectDn[i].Contains("CN="))
+                {
+                    name = subjectDn[i].Trim().Substring("CN=".Length); 
+                    break;
+                } 
+                
+                if (i == subjectDn.Length - 1)
+                {
+                    name = certificate.SubjectName.Name;
+                }
+            }
 
             // Create new inventory item for the certificate
             List<string> certList = new List<string>{ Convert.ToBase64String(certificate.RawData) };
             
             CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
             {
-                Alias = certificate.Thumbprint, 
+                Alias = name, 
                 PrivateKeyEntry = false,
                 ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                 UseChainLevel = true,

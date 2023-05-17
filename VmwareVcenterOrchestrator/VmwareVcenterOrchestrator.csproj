@@ -25,7 +25,7 @@
     </ItemGroup>
     
     <ItemGroup> 
-        <None Update="manifest.json">
+        <None Update="manifes.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
