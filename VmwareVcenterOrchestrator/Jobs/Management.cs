@@ -190,25 +190,24 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
                 X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
                 
-                // Extract the CN from the subject name, if there is a CN
-                string name = string.Empty;
-                string[] subjectDn = certificate.SubjectName.Name.Split(',');
-                for (int i = 0; i < subjectDn.Length; i++)
-                {
-                    if (subjectDn[i].Contains("CN="))
-                    {
-                        name = subjectDn[i].Trim().Substring("CN=".Length);
-                        break;
-                    } 
-                
-                    if (i == subjectDn.Length - 1)
-                    {
-                        name = certificate.SubjectName.Name;
-                    }
-                }
+                // Extract the CN from the subject name for alias
+                //string name = string.Empty;
+                //string[] subjectDn = certificate.SubjectName.Name.Split(',');
+                //for (int i = 0; i < subjectDn.Length; i++)
+                //{
+                //    if (subjectDn[i].Contains("CN="))
+                //    {
+                //        name = subjectDn[i].Trim().Substring("CN=".Length);
+                //        break;
+                //    } 
+                //    if (i == subjectDn.Length - 1)
+                //    {
+                //        name = certificate.SubjectName.Name;
+                //    }
+                //}
 
                 //check if the trusted root alias matches the job alias
-                if (name == config.JobCertificate.Alias)
+                if (certificate.Thumbprint == config.JobCertificate.Alias)
                 {
                     VcenterClient.RemoveVcenterTrustedRoot(trustedRootChain);
                     break;
