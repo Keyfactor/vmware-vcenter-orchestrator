@@ -1,4 +1,3 @@
-
 {
   "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
   "integration_type": "orchestrator",
@@ -7,6 +6,7 @@
   "update_catalog": false,
   "link_github": false,
   "support_level": "kf-community",
+  "release_dir": "VmwareVcenterOrchestrator\\bin\\Release",
   "description": "The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.",
   "about": {
     "orchestrator": {
