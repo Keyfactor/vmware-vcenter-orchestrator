@@ -10,6 +10,7 @@
   "description": "The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.",
   "about": {
     "orchestrator": {
+      "UOFramework": "10.1",
       "win": {
         "supportsCreateStore": false,
         "supportsDiscovery": false,
