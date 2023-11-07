@@ -24,11 +24,11 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
 {
     internal class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Program p = new Program();
 
-            p.TestGetSslCertificate();
+            await p.TestGetSslCertificate();
 
             string caSubjectName = Environment.GetEnvironmentVariable("VCENTER_CA_SUBJECT_NAME") ?? string.Empty;
             X509Certificate2 caCertificate = CreateCACertificate(caSubjectName);
@@ -66,10 +66,10 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
 
         private VmwareVcenterClient Client { get; }
 
-        public void TestGetSslCertificate()
+        public async Task TestGetSslCertificate()
         {
             Console.Write("Getting Vcenter Certificates...\n");
-            foreach (CurrentInventoryItem inventoryItem in FormatSslCert(Client.GetVcenterSslCertificate()).ToList())
+            foreach (CurrentInventoryItem inventoryItem in FormatSslCert(await Client.GetVcenterSslCertificate()).ToList())
             {
                 Console.Write($"Found certificate called {inventoryItem.Alias}\n");
             }

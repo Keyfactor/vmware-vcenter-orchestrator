@@ -31,11 +31,11 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             ILogger logger = LogHandler.GetReflectedClassLogger(this);
             logger.LogDebug($"Certificate Store Configuration: {JsonConvert.SerializeObject(details)}");
             logger.LogDebug("Initializing VmwareVsphereClient");
-            dynamic properties = JsonConvert.DeserializeObject(details.Properties);
+            dynamic? properties = JsonConvert.DeserializeObject(details.Properties);
 
             string ClientMachine = details.ClientMachine;
-            string Username = properties?.ServerUsername;
-            string Password = properties?.ServerPassword;
+            string Username = properties?.ServerUsername || null;
+            string Password = properties?.ServerPassword || null;
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
             

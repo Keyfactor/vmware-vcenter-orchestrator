@@ -99,7 +99,7 @@ fill the displayed form with the following values:
 | Parameter       | Value                  | Description                                                                         |
 |-----------------|------------------------|-------------------------------------------------------------------------------------|
 | Category        | 'VMware vCenter'       | The name of the VMware vCenter store type                                           |
-| Client Machine  | vSphere Domain Name    | The domain name of the vSphere client managing vCenter                              |
+| Client Machine  | vSphere Domain Name    | The domain name of the vSphere client managing vCenter (ex: https://myvcenter.pki.local would use `myvcenter.pki.local`                             |
 | Store Path      | 'vCenter Certificates' | The _StorePathValue_ of the vCenter instance as set during store type configuration |
 | Server Username | Client secret Username | The secret vCenter username used to manage the vCenter connection                   |
 | Server Password | Client Secret Password | The secret vCenter password used to manage the vCenter connection                   |

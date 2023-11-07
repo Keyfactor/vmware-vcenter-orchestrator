@@ -42,11 +42,11 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             try
             {
                 //inventory ssl certificate and trusted root certificates
-                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate()).ToList();
-                List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains();
+                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate().Result).ToList();
+                List<string> trustedRootChains = VcenterClient.GetVcenterTrustedRootChains().Result;
                 foreach (string trustedRootChain in trustedRootChains)
                 {
-                    CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetVcenterTrustedRootChain(trustedRootChain));
+                    CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetVcenterTrustedRootChain(trustedRootChain).Result);
                     inventoryItems.Add(trustedRootInventoryItem);
                 }
 
