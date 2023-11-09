@@ -9,6 +9,18 @@ VMware vCenter. The certificate type is automatically identified by the orchestr
 
 vCenter management is controlled by the vSphere client. Follow VMware's vCenter Server Configuration [documentation](https://docs.vmware.com/en/VMware-vSphere/7.0/vsphere-esxi-vcenter-server-703-configuration-guide.pdf) to configure a vSphere client and vCenter.
 
+## Installing the extension
+
+> :warning: This orchestrator extension requires .NET framework version 7.0 or greater.
+
+1. Make sure you have the .NET framework version 7.0.0 or greater installed.  
+    1. If you aren't sure, run `dotnet --version`
+    1. If version < 7.0.0, install the latest from Microsoft.
+1. Stop the Orchestrator service if it is running.
+1. Create a folder in your Orchestrator extensions directory called "vCenter"
+1. Extract the contents of the release zip file into this folder.
+1. Start the Orchestrator service.
+
 ## Keyfactor Configuration
 
 Follow the Keyfactor Orchestrator configuration guide to install the VMware vCenter Orchestrator extension.
@@ -104,6 +116,14 @@ fill the displayed form with the following values:
 | Server Username | Client secret Username | The secret vCenter username used to manage the vCenter connection                   |
 | Server Password | Client Secret Password | The secret vCenter password used to manage the vCenter connection                   |
 
-### Important note about Trusted Root Chain Removal
+## Managing vCenter Certificates
 
-Trusted root chains can be added and removed from the vCenter certificate store through the orchestrator. Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.
+This orchestrator extension allows managing both Trusted root certificates as well as SSL/TLS certificates.  
+
+:warning: _Important note on certificate enrollment_
+
+In order to enroll a new Trusted Root Certificate from the platform, follow the normal steps for enrolling a certificate into the certificate store, but do not include the private key.
+- If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
+- If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.
+
+:warning: Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.

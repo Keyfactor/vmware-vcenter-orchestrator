@@ -74,7 +74,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing job:\n {0}", ex.Message);
+                _logger.LogError(ex, $"Error processing job:\n {ex.Message}");
                 result.FailureMessage = ex.Message;
             }
 

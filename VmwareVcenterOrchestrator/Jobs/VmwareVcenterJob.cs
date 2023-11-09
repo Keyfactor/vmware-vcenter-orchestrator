@@ -34,8 +34,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             dynamic? properties = JsonConvert.DeserializeObject(details.Properties);
 
             string ClientMachine = details.ClientMachine;
-            string Username = properties?.ServerUsername || null;
-            string Password = properties?.ServerPassword || null;
+            string Username = properties?.ServerUsername;
+            string Password = properties?.ServerPassword;
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
             

@@ -100,8 +100,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             //parse status code for error handling
 
             if (!response.IsSuccessStatusCode) {
-                var errorMessage = response.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage.ToString());
+                var errorMessage = await response.Content.ReadAsStringAsync();                
+                throw new Exception(errorMessage);
             }            
         }
         
