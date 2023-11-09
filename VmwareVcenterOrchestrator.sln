@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VmwareVcenterOrchestratorTe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{53F1F754-B49A-4E83-9DF4-546399B5B89B}"
 	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.md = CHANGELOG.md
 		integration-manifest.json = integration-manifest.json
 		readme_source.md = readme_source.md
 	EndProjectSection
