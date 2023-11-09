@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Linq.Expressions;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
@@ -38,48 +36,70 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 JobHistoryId = config.JobHistoryId
             };
 
-            try
+            switch (config.OperationType)
             {
-                switch (config.OperationType)
-                {
-                    case CertStoreOperationType.Add:
-                        _logger.LogDebug("Adding certificate to Vcenter");
+                case CertStoreOperationType.Add:
+                    _logger.LogDebug("Adding certificate to Vcenter");
 
-                        if (string.IsNullOrEmpty(config.JobCertificate.PrivateKeyPassword))
+                    if (string.IsNullOrEmpty(config.JobCertificate.PrivateKeyPassword))
+                    {
+                        _logger.LogTrace("No Private Key Password included. Adding as trusted root certificate");
+                        try
                         {
                             PerformTrustedRootAddition(config).Wait();
                         }
-                        else
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Error adding trusted root. {ex.Message}");
+                            result.FailureMessage = ex.Message;
+                            return result;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogTrace("Private Key Password is included. Adding as TLS certificate.");
+                        try
                         {
                             PerformSslReplacement(config).Wait();
                         }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Error updating TLS certificate. {ex.Message}");
+                            result.FailureMessage = ex.Message;
+                            return result;
+                        }
+                    }
 
-                        _logger.LogDebug("Add operation complete");
+                    _logger.LogDebug("Add operation complete");
+                    result.Result = OrchestratorJobStatusJobResult.Success;
+                    break;
 
-                        result.Result = OrchestratorJobStatusJobResult.Success;
-                        break;
-                    case CertStoreOperationType.Remove:
-                        _logger.LogDebug("Removing certificate from vCenter");
+                case CertStoreOperationType.Remove:
+                    _logger.LogDebug("Removing certificate from vCenter");
 
+                    try
+                    {
                         PerformRemove(config).Wait();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error removing certificate from vCenter. {ex.Message}");
+                        result.FailureMessage = ex.Message;
+                        return result;
+                    }
 
-                        _logger.LogDebug("Remove operation complete.");
+                    _logger.LogDebug("Remove operation complete.");
 
-                        result.Result = OrchestratorJobStatusJobResult.Success;
-                        break;
-                    default:
-                        _logger.LogDebug("Invalid management operation type: {0}", config.OperationType);
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error processing job:\n {ex.Message}");
-                result.FailureMessage = ex.Message;
+                    result.Result = OrchestratorJobStatusJobResult.Success;
+                    break;
+                default:
+                    _logger.LogDebug($"Invalid operation type: {config.OperationType}");
+                    throw new ArgumentOutOfRangeException($"Invalid operation type: {config.OperationType}");
             }
 
             return result;
         }
+
 
         private async Task PerformSslReplacement(ManagementJobConfiguration config)
         {
@@ -87,190 +107,65 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
             X509Certificate2 certificate = new(pkcs12CertBytes, config.JobCertificate.PrivateKeyPassword, X509KeyStorageFlags.Exportable);
 
-            string privateKeyPem;
-
-            if (certificate.HasPrivateKey)
-            {
-                _logger.LogTrace("Has private key, Extracting..");
-                privateKeyPem = certificate.GetRSAPrivateKey().ExportPkcs8PrivateKeyPem();
-            }
-            else
-            {
-                _logger.LogError("No private key has been provided, but is required.");
-                throw new Exception("No private key has been provided, but is required.");
-            }
-
-            // var privateKeyPem = certificate.PrivateKey.pem
-            //certificate.TryExportCertificatePem(new string certificatePem, out charsWritten);
-
-            //(string certificatePem, string privateKeyPem) = certificate.ExportCertificatePem();
-            ConvertCertificateToPemStrings(certificate);
-            var caRootCert = ExtractRootCA(certificate);
-
-            if (caRootCert == null)
+            var caRootCertPem = certificate.ExportCARootPem(_logger);
+            if (string.IsNullOrEmpty(caRootCertPem))
             {
                 _logger.LogError("Unable to extract the root CA necessary to replace vCenter SSL Cert.");
                 throw new Exception("Unable to extract the root CA necessary to replace vCenter SSL Cert.");
             }
-            //string caCertificatePem = ExtractRootCAtoPemString(certificate);
+            
+            (var certPem, var keyPem) = certificate.ExportCertAndPrivateKeyPem();
 
-            VcenterCertificateManagementVcenterTlsSet certReq = new VcenterCertificateManagementVcenterTlsSet
+            VCenterTlsCertSet certReq = new VCenterTlsCertSet
             {
-                cert = certificate.ExportCertificatePem(),
-                key = privateKeyPem,
-                root_cert = caRootCert.ExportCertificatePem()
+                cert = certPem,
+                key = keyPem,
+                root_cert = caRootCertPem
             };
 
             _logger.LogDebug("Adding certificate to vCenter");
             await VcenterClient.ReplaceVcenterSslCertificate(certReq);
         }
 
-        private X509Certificate2? ExtractRootCA(X509Certificate2 cert)
-        {
-            var chain = new X509Chain();
-            chain.Build(cert);
-
-            // CA is always last element of a full CA chain.
-
-            X509ChainElement chainElement = chain.ChainElements[chain.ChainElements.Count - 1];
-
-            foreach (X509ChainStatus status in chainElement.ChainElementStatus)
-            {
-                if (status.Status == X509ChainStatusFlags.PartialChain)
-                {
-                    return null;
-                }
-            }
-
-            return chainElement.Certificate;
-
-
-            //X509Store store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-            //store.Open(OpenFlags.ReadOnly);
-
-            //// Find the issuer certificate by DN
-            //X509Certificate2Collection issuerCertificates = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, issuerDn, false);
-
-            //var chain = store.
-        }
-
         private async Task PerformTrustedRootAddition(ManagementJobConfiguration config)
         {
-            VcenterCertificateManagementX509CertChain certContents = new VcenterCertificateManagementX509CertChain
+            var certContents = new VCenterX509CertChain
             {
-                cert_chain = new List<string> { $"-----BEGIN CERTIFICATE-----\n{config.JobCertificate.Contents}\n-----END CERTIFICATE-----" }
+                cert_chain = new List<string> { $"{X509Certificate2Extensions.CERTIFICATE_HEADER_PEM}{config.JobCertificate.Contents}{X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM}" }
             };
 
-            VcenterCertificateManagementVcenterTrustedRootChainsCreate req = new VcenterCertificateManagementVcenterTrustedRootChainsCreate
+            var req = new VCenterTrustedRootChainsCreate
             {
                 cert_chain = certContents,
             };
 
-            await VcenterClient.AddVcenterTrustedRoot(req);
-        }
-
-        public (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(
-            X509Certificate2 cert)
-        {
-            //cert.pem
-            // Convert the certificate to PEM format
-            string certificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(cert.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
-
-            // Convert the private key to PEM format
-            string privateKeyPem = ExportPrivateKeyToPem(cert);
-
-            return (certificatePem, privateKeyPem);
-        }
-
-        public string ExtractRootCAtoPemString(X509Certificate2 cert)
-        {
-            // Get the issuer's distinguished name (DN)
-            string issuerDn = cert.Issuer;
-
-            X509Store store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-            store.Open(OpenFlags.ReadOnly);
-
-            // Find the issuer certificate by DN
-            X509Certificate2Collection issuerCertificates = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, issuerDn, false);
-            string caCertificatePem = string.Empty;
-            if (issuerCertificates.Count > 0)
-            {
-                X509Certificate2 issuerCertificate = issuerCertificates[0];
-                caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(issuerCertificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
-            }
-            else
-            {
-                _logger.LogDebug("The root CA information for {0} cannot be found.", cert.FriendlyName);
-            }
-
-            store.Close();
-
-            return caCertificatePem;
-        }
-
-        private string ExportPrivateKeyToPem(X509Certificate2 certificate)
-        {
-            //AsymmetricAlgorithm privateKey = certificate.GetRSAPrivateKey();
-            _logger.LogTrace("Extracting PEM formatted private key");
-            string pkPem = certificate.PrivateKey.ExportPkcs8PrivateKeyPem();
-            if (string.IsNullOrEmpty(pkPem))
-            {
-                throw new NotSupportedException("Unsupported private key algorithm");
-            }
-            return pkPem;
-
-            //if (privateKey is RSA or ECDsa)
-            //{
-            //    byte[] pkcs8PrivateKey = certificate.PrivateKey.ExportPkcs8PrivateKey();
-            //    string pem = Convert.ToBase64String(pkcs8PrivateKey);
-            //    return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
-            //}
-
-            // Add support for other key types if needed            
+            await VcenterClient.AddTrustedRoot(req);
         }
 
         public async Task PerformRemove(ManagementJobConfiguration config)
         {
             _logger.LogTrace("starting management > remove task");
-            //retrieve the trusted root information
 
             try
             {
-                var trustedRootChains = await VcenterClient.GetVcenterTrustedRootChains();
-
+                //retrieve the trusted root information
+                var trustedRootChains = await VcenterClient.GetTrustedRootChains();
                 _logger.LogTrace("received trusted root chain response.");
 
                 foreach (string trustedRootChain in trustedRootChains)
                 {
-                    VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo = await VcenterClient.GetVcenterTrustedRootChain(trustedRootChain);
+                    var trustedRootInfo = await VcenterClient.GetTrustedRootChain(trustedRootChain);
                     _logger.LogTrace("Formatting the response.");
                     //Format the retrieved trusted root chain certificate
                     //Remove X509 CRL Cert if it exists
-                    string trimPoint = "\n-----END CERTIFICATE-----";
-                    int index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(trimPoint);
-                    string trustedRootCert = string.Empty;
+                    var index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM);
+                    var trustedRootCert = string.Empty;
                     if (index >= 0)
                     {
                         trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
                     }
-                    byte[] pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart("-----BEGIN CERTIFICATE-----\n".ToCharArray()));
-                    X509Certificate2 certificate = new X509Certificate2(pkcs12CertBytes);
-
-                    // Extract the CN from the subject name for alias
-                    //string name = string.Empty;
-                    //string[] subjectDn = certificate.SubjectName.Name.Split(',');
-                    //for (int i = 0; i < subjectDn.Length; i++)
-                    //{
-                    //    if (subjectDn[i].Contains("CN="))
-                    //    {
-                    //        name = subjectDn[i].Trim().Substring("CN=".Length);
-                    //        break;
-                    //    } 
-                    //    if (i == subjectDn.Length - 1)
-                    //    {
-                    //        name = certificate.SubjectName.Name;
-                    //    }
-                    //}
+                    var pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM.ToCharArray()));
+                    var certificate = new X509Certificate2(pkcs12CertBytes);
 
                     //check if the trusted root alias matches the job alias
                     if (certificate.Thumbprint == config.JobCertificate.Alias)
@@ -279,7 +174,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                         break;
                     }
                 }
-
             }
             catch (Exception ex)
             {

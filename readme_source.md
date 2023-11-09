@@ -11,11 +11,6 @@ vCenter management is controlled by the vSphere client. Follow VMware's vCenter 
 
 ## Installing the extension
 
-> :warning: This orchestrator extension requires .NET framework version 7.0 or greater.
-
-1. Make sure you have the .NET framework version 7.0.0 or greater installed.  
-    1. If you aren't sure, run `dotnet --version`
-    1. If version < 7.0.0, install the latest from Microsoft.
 1. Stop the Orchestrator service if it is running.
 1. Create a folder in your Orchestrator extensions directory called "vCenter"
 1. Extract the contents of the release zip file into this folder.
@@ -126,4 +121,5 @@ In order to enroll a new Trusted Root Certificate from the platform, follow the 
 - If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
 - If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.
 
+Removal is support through the vCenter API for Trusted Root Chains only.  TLS certificates cannot be removed, but they can be replaced.
 :warning: Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.

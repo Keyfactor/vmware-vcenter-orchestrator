@@ -22,18 +22,21 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 {
     public class VmwareVcenterClient
     {
+        const string APITOKENENDPOINT = "/api/session";
         const string TLSCERTENDPOINT = "/api/vcenter/certificate-management/vcenter/tls";
         const string TRUSTEDROOTENDPOINT = "/api/vcenter/certificate-management/vcenter/trusted-root-chains/";
-
+        private ILogger _logger { get; }
+        private HttpClient VcenterClient { get; }
 
         public VmwareVcenterClient(string vCenterHostname, string username, string password)
         {
-            Log = LogHandler.GetClassLogger<VmwareVcenterClient>();
-            Log.LogDebug("Initializing VMware vCenter client");
+            _logger = LogHandler.GetClassLogger<VmwareVcenterClient>();
+            _logger.LogDebug("Initializing VMware vCenter client");
 
-            var VcenterClientHandler = new HttpClientHandler();
-
-            VcenterClientHandler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            var VcenterClientHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+            };
 
             VcenterClient = new HttpClient(VcenterClientHandler)
             {
@@ -43,18 +46,16 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var apiKey = GetApiToken(username, password).Result;
             VcenterClient.DefaultRequestHeaders.Add("vmware-api-session-id", apiKey);
         }
-        private ILogger Log { get; }
-        private HttpClient VcenterClient { get; }
 
         private async Task<string?> GetApiToken(string username, string password)
         {
-            string credentials = username + ":" + password;
-            string encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+            var credentials = username + ":" + password;
+            var encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
             
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/session");
+            var request = new HttpRequestMessage(HttpMethod.Post, APITOKENENDPOINT);
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
             
-            Log.LogDebug("Calling POST on vcenter endpoint for TLS certificates", request);
+            _logger.LogDebug("Calling POST on vcenter endpoint for TLS certificates", request);
 
             var response = await VcenterClient.SendAsync(request);
 
@@ -64,16 +65,18 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
                 throw new Exception(errorMessage.ToString());
             }
 
-            var apiKeyTask = await response.Content.ReadAsStringAsync();
+            var apiKey = await response.Content.ReadAsStringAsync();
                         
-            return apiKeyTask?.Trim('\"');
+            return apiKey.Trim('\"');
         }
 
-        public async Task<VcenterCertificateManagementVcenterTlsInfo> GetVcenterSslCertificate() 
+        public async Task<VCenterTlsCertInfo> GetVcenterSslCertificate() 
         {
             //This endpoint does not return certificate chains
-            Log.LogDebug("Calling GET on vcenter endpoint for TLS certificates", TLSCERTENDPOINT);
+            _logger.LogDebug("Calling GET on vcenter endpoint for TLS certificates", TLSCERTENDPOINT);
+
             var response = await VcenterClient.GetAsync(TLSCERTENDPOINT);
+            
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = response.Content.ReadAsStringAsync();
@@ -81,23 +84,18 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var sslCertResp = await response.Content.ReadAsStringAsync();            
-            var SslCert = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTlsInfo>(sslCertResp);
+            var SslCert = JsonConvert.DeserializeObject<VCenterTlsCertInfo>(sslCertResp);
             
             return SslCert;
         }
 
-        public async Task ReplaceVcenterSslCertificate(VcenterCertificateManagementVcenterTlsSet cert)
+        public async Task ReplaceVcenterSslCertificate(VCenterTlsCertSet cert)
         {
             var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
-            var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
-            Log.LogDebug("Calling PUT on vcenter endpoint for TLS certificates", request);
+            var request_body = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
+            _logger.LogDebug("Calling PUT on vcenter endpoint for TLS certificates", request_body);
             
-            var response = await VcenterClient.PutAsync(TLSCERTENDPOINT, request);
-                        
-            //give the server time to update with the new certificate before checking for success
-            //Task.Delay(TimeSpan.FromMinutes(3)).Wait();
-
-            //parse status code for error handling
+            var response = await VcenterClient.PutAsync(TLSCERTENDPOINT, request_body);
 
             if (!response.IsSuccessStatusCode) {
                 var errorMessage = await response.Content.ReadAsStringAsync();                
@@ -107,9 +105,9 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
         
         public async Task RemoveVcenterTrustedRoot(string chain)
         {
-            string request = TRUSTEDROOTENDPOINT + chain;
-            Log.LogDebug("Calling DELETE on vcenter endpoint for trusted root chain", request);
-            var response = await VcenterClient.DeleteAsync(request);
+            var request_uri = TRUSTEDROOTENDPOINT + chain;
+            _logger.LogDebug("Calling DELETE on vcenter endpoint for trusted root chain", request_uri);
+            var response = await VcenterClient.DeleteAsync(request_uri);
 
             if (!response.IsSuccessStatusCode) {
                 var errorMessage = await response.Content.ReadAsStringAsync();
@@ -117,9 +115,9 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }            
         }
         
-        public async Task<List<string>> GetVcenterTrustedRootChains()
+        public async Task<List<string>> GetTrustedRootChains()
         {
-            Log.LogDebug("Calling GET on vcenter endpoint for trusted root chain");
+            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain");
             var response = await VcenterClient.GetAsync(TRUSTEDROOTENDPOINT);
             
             if (!response.IsSuccessStatusCode)
@@ -130,17 +128,18 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 
             var responseContent = await response.Content.ReadAsStringAsync();
             
-            var trustedRoots = JsonConvert.DeserializeObject<List<VcenterCertificateManagementVcenterTrustedRootChainsSummary>>(responseContent);
+            var trustedRoots = JsonConvert.DeserializeObject<List<VCenterTrustedRootChainsSummary>>(responseContent);
             var chains = trustedRoots.Select(tr => tr.chain).ToList();
             
             return chains;
         }
 
-        public async Task<VcenterCertificateManagementVcenterTrustedRootChainsInfo> GetVcenterTrustedRootChain(string chain)
+        public async Task<VCenterTrustedRootChainsInfo> GetTrustedRootChain(string chain)
         {
-            string request = TRUSTEDROOTENDPOINT + chain;
-            Log.LogDebug("Calling GET on vcenter endpoint for trusted root chain", request);
-            var response = await VcenterClient.GetAsync(request);
+            var request_uri = TRUSTEDROOTENDPOINT + chain;            
+            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain", request_uri);
+
+            var response = await VcenterClient.GetAsync(request_uri);
 
             if (!response.IsSuccessStatusCode) {
                 var errorMessage = await response.Content.ReadAsStringAsync();
@@ -148,16 +147,16 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
             
             var responseContent = await response.Content.ReadAsStringAsync();            
-            VcenterCertificateManagementVcenterTrustedRootChainsInfo trustedRootInfo = JsonConvert.DeserializeObject<VcenterCertificateManagementVcenterTrustedRootChainsInfo>(responseContent);
+            var trustedRootInfo = JsonConvert.DeserializeObject<VCenterTrustedRootChainsInfo>(responseContent);
             return trustedRootInfo;
         }
         
-        public async Task AddVcenterTrustedRoot(VcenterCertificateManagementVcenterTrustedRootChainsCreate trustedRootChain)
+        public async Task AddTrustedRoot(VCenterTrustedRootChainsCreate trustedRootChain)
         {
             var jsonTrustedRootChain = JsonConvert.SerializeObject(trustedRootChain);
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
+            _logger.LogDebug("Calling POST on vcenter endpoint for trusted root chain", request);
 
-            Log.LogDebug("Calling POST on vcenter endpoint for trusted root chain", request);
             var response = await VcenterClient.PostAsync(TRUSTEDROOTENDPOINT, request);
             
             if (!response.IsSuccessStatusCode)
