@@ -24,37 +24,37 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
 {
     internal class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Program p = new Program();
 
-            p.TestGetSslCertificate();
+            await p.TestGetSslCertificate();
 
-            string caSubjectName = Environment.GetEnvironmentVariable("VCENTER_CA_SUBJECT_NAME") ?? string.Empty;
-            X509Certificate2 caCertificate = CreateCACertificate(caSubjectName);
-            string caCertificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(caCertificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
+            var caSubjectName = Environment.GetEnvironmentVariable("VCENTER_CA_SUBJECT_NAME") ?? string.Empty;
+            var caCertificate = CreateCACertificate(caSubjectName);
+            var caCertificatePem = $"{X509Certificate2Extensions.CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(caCertificate.Export(X509ContentType.Cert))}{X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM}";
 
-            string signedCertSubjectName = Environment.GetEnvironmentVariable("VCENTER_SIGNED_SUBJECT_NAME") ?? string.Empty;
-            X509Certificate2 signedCertificate = CreateSignedCertificate(caCertificate, signedCertSubjectName);
-            
+            var signedCertSubjectName = Environment.GetEnvironmentVariable("VCENTER_SIGNED_SUBJECT_NAME") ?? string.Empty;
+            var signedCertificate = CreateSignedCertificate(caCertificate, signedCertSubjectName);
+
             (string CertificatePem, string PemKey) = ConvertCertificateToPemStrings(signedCertificate);
 
-            VcenterCertificateManagementVcenterTlsSet certReq = new VcenterCertificateManagementVcenterTlsSet
+            var certReq = new VCenterTlsCertSet
             {
                 cert = CertificatePem,
                 key = PemKey,
                 root_cert = caCertificatePem
             };
-            
-            p.TestAddCertificate(certReq);
+
+            await p.TestAddCertificate(certReq);
             p.TestRemoveCertificate(signedCertificate);
         }
 
         public Program()
         {
             string ClientMachine = Environment.GetEnvironmentVariable("VCENTER_HOSTNAME") ?? string.Empty;
-            
-            VcenterProperties properties = new VcenterProperties()
+
+            var properties = new VcenterProperties()
             {
                 ServerUsername = Environment.GetEnvironmentVariable("VCENTER_USERNAME") ?? string.Empty,
                 ServerPassword = Environment.GetEnvironmentVariable("VCENTER_PASSWORD") ?? string.Empty,
@@ -66,32 +66,33 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
 
         private VmwareVcenterClient Client { get; }
 
-        public void TestGetSslCertificate()
+        public async Task TestGetSslCertificate()
         {
             Console.Write("Getting Vcenter Certificates...\n");
-            foreach (CurrentInventoryItem inventoryItem in FormatSslCert(Client.GetVcenterSslCertificate()).ToList())
+            foreach (CurrentInventoryItem inventoryItem in FormatSslCert(await Client.GetVcenterSslCertificate()).ToList())
             {
                 Console.Write($"Found certificate called {inventoryItem.Alias}\n");
             }
         }
 
-        public void TestAddCertificate(VcenterCertificateManagementVcenterTlsSet newCert)
+        public async Task TestAddCertificate(VCenterTlsCertSet newCert)
         {
             Console.Write("Adding Vcenter Certificate...\n");
-            Client.ReplaceVcenterSslCertificate(newCert);
+            await Client.ReplaceVcenterSslCertificate(newCert);
             Console.Write($"Added certificate\n");
         }
-        
-        public void TestRemoveCertificate(X509Certificate2 cert)
+
+        public async Task TestRemoveCertificate(X509Certificate2 cert)
         {
-            Console.Write("Removing Vcenter Certificate...\n");
-            //TODO
+            //Console.Write("Removing Vcenter Certificate...\n");
+            //mock the vCenter 
+            
         }
 
         public static (string CertificatePem, string PrivateKeyPem) ConvertCertificateToPemStrings(X509Certificate2 certificate)
         {
             // Convert the certificate to PEM format
-            string certificatePem = $"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(certificate.Export(X509ContentType.Cert))}\n-----END CERTIFICATE-----";
+            string certificatePem = $"{X509Certificate2Extensions.CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(certificate.Export(X509ContentType.Cert))}{X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM}";
 
             // Convert the private key to PEM format
             string privateKeyPem = ExportPrivateKeyToPem(certificate);
@@ -101,15 +102,15 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
 
         private static string ExportPrivateKeyToPem(X509Certificate2 certificate)
         {
-            AsymmetricAlgorithm privateKey = certificate.PrivateKey;
+            var privateKey = certificate.PrivateKey;
 
             if (privateKey is RSA or ECDsa)
             {
                 byte[] pkcs8PrivateKey = certificate.PrivateKey.ExportPkcs8PrivateKey();
                 string pem = Convert.ToBase64String(pkcs8PrivateKey);
-                return $"-----BEGIN PRIVATE KEY-----\n{pem}\n-----END PRIVATE KEY-----";
+                return $"{X509Certificate2Extensions.PRIVATE_KEY_HEADER_PEM}{pem}{X509Certificate2Extensions.PRIVATE_KEY_FOOTER_PEM}";
             }
-            
+
             // Add support for other key types if needed
 
             throw new NotSupportedException("Unsupported private key algorithm");
@@ -149,7 +150,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             RSA rsa = RSA.Create(2048);
 
             // Create a certificate request for the new certificate
-            CertificateRequest req = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256,
+            var req = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256,
                 RSASignaturePadding.Pkcs1);
 
             // Add basic extensions to the certificate request
@@ -159,7 +160,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
                     false));
             req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
 
-            SubjectAlternativeNameBuilder sanBuilder = new SubjectAlternativeNameBuilder();
+            var sanBuilder = new SubjectAlternativeNameBuilder();
             sanBuilder.AddDnsName(subjectName);
             req.CertificateExtensions.Add(sanBuilder.Build());
 
@@ -167,34 +168,34 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestratorTest.Progra
             var notBefore = DateTimeOffset.UtcNow.AddDays(-1);
             var notAfter = DateTimeOffset.UtcNow.AddYears(1);
 
-            X509Certificate2 signedCert =
+            var signedCert =
                 req.Create(caCertificate, notBefore, notAfter, req.PublicKey.EncodedKeyValue.RawData);
 
             return new X509Certificate2(signedCert.CopyWithPrivateKey(rsa));
         }
-        
+
         public string GetTrustedRootChainIdentifier(X509Certificate2 certificate)
         {
-            X509Chain chain = new X509Chain();
+            var chain = new X509Chain();
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
             chain.Build(certificate);
 
-            X509Certificate2 rootCertificate = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+            var rootCertificate = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
 
             return rootCertificate.Thumbprint;
         }
-        
-        public IEnumerable<CurrentInventoryItem> FormatSslCert(VcenterCertificateManagementVcenterTlsInfo SslCert)
+
+        public IEnumerable<CurrentInventoryItem> FormatSslCert(VCenterTlsCertInfo SslCert)
         {
-            List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
-            
+            var inventoryItems = new List<CurrentInventoryItem>();
+
             // Vcenter certs are in PEM format
             //Remove the BEGIN/END
-            SslCert.cert = SslCert.cert.Replace("-----BEGIN CERTIFICATE-----\n", string.Empty).Replace("\n-----END CERTIFICATE-----", string.Empty);
-           
+            SslCert.cert = SslCert.cert.Replace(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM, string.Empty).Replace(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM, string.Empty);
+
             // Create new inventory item for the certificate
-            List<string> certList = new List<string>{ SslCert.cert };
-            
+            List<string> certList = new List<string> { SslCert.cert };
+
             CurrentInventoryItem inventoryItem = new CurrentInventoryItem()
             {
                 Alias = SslCert.subject_alternative_name[0], //.subject_dn, 
