@@ -6,7 +6,7 @@
   "update_catalog": false,
   "link_github": false,
   "support_level": "kf-community",
-  "release_dir": "VmwareVcenterOrchestrator\\bin\\Release\\netcoreapp3.1",
+  "release_dir": "VmwareVcenterOrchestrator\\bin\\Release\\net6.0",
   "description": "The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.",
   "about": {
     "orchestrator": {
