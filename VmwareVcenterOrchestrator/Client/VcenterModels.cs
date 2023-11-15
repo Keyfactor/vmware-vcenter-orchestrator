@@ -14,7 +14,7 @@
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
 
-public struct VcenterCertificateManagementVcenterTlsInfo
+public struct VCenterTlsCertInfo
 {
     public string issuer_dn;
     public List<string> key_usage;
@@ -32,30 +32,30 @@ public struct VcenterCertificateManagementVcenterTlsInfo
     public List<string> extended_key_usage;
 }
 
-public struct VcenterCertificateManagementVcenterTlsSet
+public struct VCenterTlsCertSet
 {
     public string cert;
     public string key;
     public string root_cert;
 }
 
-public struct VcenterCertificateManagementVcenterTrustedRootChainsSummary
+public struct VCenterTrustedRootChainsSummary
 {
     public string chain;
 }
 
-public struct VcenterCertificateManagementVcenterTrustedRootChainsInfo
+public struct VCenterTrustedRootChainsInfo
 {
-    public VcenterCertificateManagementX509CertChain cert_chain;
+    public VCenterX509CertChain cert_chain;
 }
 
-public struct VcenterCertificateManagementX509CertChain
+public struct VCenterX509CertChain
 {
     public List<string> cert_chain;
 }
 
-public struct VcenterCertificateManagementVcenterTrustedRootChainsCreate
+public struct VCenterTrustedRootChainsCreate
 {
-    public VcenterCertificateManagementX509CertChain cert_chain;
+    public VCenterX509CertChain cert_chain;
     public string chain;
 }
