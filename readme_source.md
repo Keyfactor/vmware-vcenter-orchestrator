@@ -3,7 +3,7 @@
 The VMware vCenter Orchestrator extension remotely manages certificates used by VMware vCenter. The extension implements the Inventory, Management Add, and Management Remove job types.
 
 The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
-VMware vCenter. The certificate type is automatically identified by the orchestrator.
+VMware vCenter. The certificate type is automatically identified by the orchestrator.  It does not manage ESXI host certificates.
 
 ## vCenter Configuration
 
@@ -46,7 +46,7 @@ by Keyfactor Orchestrators. To create the VMware vCenter Certificate Store Type,
       "Create": false,
       "Discovery": false,
       "Enrollment": false,
-      "Remove": true
+      "Remove": false
     },
     "Properties": [
       {
@@ -120,6 +120,3 @@ This orchestrator extension allows managing both Trusted root certificates as we
 In order to enroll a new Trusted Root Certificate from the platform, follow the normal steps for enrolling a certificate into the certificate store, but do not include the private key.
 - If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
 - If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.
-
-Removal is support through the vCenter API for Trusted Root Chains only.  TLS certificates cannot be removed, but they can be replaced.
-:warning: Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
@@ -35,12 +36,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 Result = OrchestratorJobStatusJobResult.Failure,
                 JobHistoryId = config.JobHistoryId
             };
-
+            var configJson = System.Text.Json.JsonSerializer.Serialize(config);
             switch (config.OperationType)
             {
                 case CertStoreOperationType.Add:
                     _logger.LogDebug("Adding certificate to Vcenter");
-
+                    _logger.LogTrace($"config values: {configJson}");
                     if (string.IsNullOrEmpty(config.JobCertificate.PrivateKeyPassword))
                     {
                         _logger.LogTrace("No Private Key Password included. Adding as trusted root certificate");
@@ -108,13 +109,18 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             X509Certificate2 certificate = new(pkcs12CertBytes, config.JobCertificate.PrivateKeyPassword, X509KeyStorageFlags.Exportable);
 
             var caRootCertPem = certificate.ExportCARootPem(_logger);
+
+            _logger.LogTrace($"ca root PEM: \n\n{caRootCertPem}\n\n");
+
             if (string.IsNullOrEmpty(caRootCertPem))
             {
                 _logger.LogError("Unable to extract the root CA necessary to replace vCenter SSL Cert.");
                 throw new Exception("Unable to extract the root CA necessary to replace vCenter SSL Cert.");
             }
-            
+
             (var certPem, var keyPem) = certificate.ExportCertAndPrivateKeyPem();
+            _logger.LogTrace($"ca root PEM: \n\n{caRootCertPem}\n\n");
+
 
             VCenterTlsCertSet certReq = new VCenterTlsCertSet
             {
@@ -122,6 +128,9 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 key = keyPem,
                 root_cert = caRootCertPem
             };
+            var jsonReq = JsonSerializer.Serialize(certReq);
+
+            _logger.LogTrace($"TLS Cert Set request Payload: \n\n {jsonReq} \n\n");
 
             _logger.LogDebug("Adding certificate to vCenter");
             await VcenterClient.ReplaceVcenterSslCertificate(certReq);

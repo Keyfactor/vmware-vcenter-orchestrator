@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Keyfactor.Logging;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
 {
@@ -43,32 +45,45 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
         }
 
         public static string ExportCARootPem(this X509Certificate2 cert, ILogger _logger)
-        {
+        {            
+            _logger.MethodEntry();
+            _logger.LogDebug($"----- EXTRACTING ROOT CA from {cert.FriendlyName} -----", new { cert });
+
             // Get the issuer's distinguished name (DN)
             var issuerDn = cert.Issuer;
 
-            var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-            store.Open(OpenFlags.ReadOnly);
+            _logger.LogDebug($"cert.Issuer = {cert.Issuer}");
 
-            // Find the issuer certificate by DN
-            var issuerCertificates = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, issuerDn, false);
-
-            string caCertificatePem;
-
-            if (issuerCertificates.Count > 0)
+            _logger.LogTrace("building cert chain from provided cert");
+            X509Chain certChain = new X509Chain();
+            if (!certChain.Build(cert)) 
             {
-                var issuerCertificate = issuerCertificates[0];
-                caCertificatePem = $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(issuerCertificate.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
-            }
-            else
-            {
-                _logger.LogDebug($"The root CA information for {cert.FriendlyName} cannot be found.");
+                _logger.LogDebug($"The chain cannot be extracted from the certificate data.");
                 return string.Empty;
-            }
+            };
 
-            store.Close();
+            var elementCount = certChain.ChainElements.Count();
+            _logger.LogTrace($"success: cert chain has {elementCount} entries.");
 
-            return caCertificatePem;
+            var rootChainPem = string.Empty;
+
+            for (var i = 1; i < elementCount; i++) {
+                rootChainPem += $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(certChain.ChainElements[i].Certificate.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
+            }            
+            _logger.LogTrace($"root chain = {rootChainPem}");
+                                    
+            //var issuerCert = certChain.ChainElements.First(ce => ce.Certificate.SubjectName.Name.ToLower() == issuerDn.ToLower())?.Certificate;
+            
+            //if (issuerCert == null)
+            //{
+            //    _logger.LogDebug($"Unable to find trusted root with subject distinguished name of {issuerDn} in chain.");
+            //    return string.Empty;
+            //}
+            //_logger.LogTrace($"Found issuer cert named {issuerCert.FriendlyName}");
+
+            //var caCertificatePem = $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(issuerCert.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
+
+            return rootChainPem;
         }
 
         private static string ExportPrivateKeyToPem(this X509Certificate2 certificate)

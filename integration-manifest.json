@@ -15,7 +15,7 @@
         "supportsCreateStore": false,
         "supportsDiscovery": false,
         "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
+        "supportsManagementRemove": false,
         "supportsReenrollment": false,
         "supportsInventory": true,
         "platformSupport": "Unused"
@@ -24,7 +24,7 @@
         "supportsCreateStore": false,
         "supportsDiscovery": false,
         "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
+        "supportsManagementRemove": false,
         "supportsReenrollment": false,
         "supportsInventory": true,
         "platformSupport": "Unused"
