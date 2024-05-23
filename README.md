@@ -1,9 +1,9 @@
+
 # VMware vCenter Orchestrator
 
 The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.
 
 #### Integration status: Production - Ready for use in production environments.
-
 
 ## About the Keyfactor Universal Orchestrator Extension
 
@@ -13,33 +13,32 @@ The Universal Orchestrator is part of the Keyfactor software distribution and is
 
 The Universal Orchestrator is the successor to the Windows Orchestrator. This Orchestrator Extension plugin only works with the Universal Orchestrator and does not work with the Windows Orchestrator.
 
-
 ## Support for VMware vCenter Orchestrator
 
 VMware vCenter Orchestrator is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket via the Keyfactor Support Portal at https://support.keyfactor.com
 
 ###### To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
 
-
 ---
 
+
+---
 
 
 
 ## Keyfactor Version Supported
 
 The minimum version of the Keyfactor Universal Orchestrator Framework needed to run this version of the extension is 10.1
-
 ## Platform Specific Notes
 
 The Keyfactor Universal Orchestrator may be installed on either Windows or Linux based platforms. The certificate operations supported by a capability may vary based what platform the capability is installed on. The table below indicates what capabilities are supported based on which platform the encompassing Universal Orchestrator is running.
 | Operation | Win | Linux |
 |-----|-----|------|
 |Supports Management Add|&check; |&check; |
-|Supports Management Remove|&check; |&check; |
+|Supports Management Remove|  |  |
 |Supports Create Store|  |  |
 |Supports Discovery|  |  |
-|Supports Renrollment|  |  |
+|Supports Reenrollment|  |  |
 |Supports Inventory|&check; |&check; |
 
 
@@ -54,7 +53,7 @@ The Keyfactor Universal Orchestrator may be installed on either Windows or Linux
 The VMware vCenter Orchestrator extension remotely manages certificates used by VMware vCenter. The extension implements the Inventory, Management Add, and Management Remove job types.
 
 The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
-VMware vCenter. The certificate type is automatically identified by the orchestrator.
+VMware vCenter. The certificate type is automatically identified by the orchestrator.  It does not manage ESXI host certificates.
 
 ## vCenter Configuration
 
@@ -97,7 +96,7 @@ by Keyfactor Orchestrators. To create the VMware vCenter Certificate Store Type,
       "Create": false,
       "Discovery": false,
       "Enrollment": false,
-      "Remove": true
+      "Remove": false
     },
     "Properties": [
       {
@@ -172,6 +171,6 @@ In order to enroll a new Trusted Root Certificate from the platform, follow the 
 - If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
 - If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.
 
-Removal is support through the vCenter API for Trusted Root Chains only.  TLS certificates cannot be removed, but they can be replaced.
-:warning: Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.
+When creating cert store type manually, that store property names and entry parameter names are case sensitive
+
 
