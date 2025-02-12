@@ -58,7 +58,11 @@ To use the VMware vCenter Universal Orchestrator extension, you **must** create 
 
 
 
-## Installation
+## Keyfactor Version Supported
+
+The minimum version of the Keyfactor Universal Orchestrator Framework needed to run this version of the extension is 10.1
+
+## Platform Specific Notes
 
 1. **Download the latest VMware vCenter Universal Orchestrator extension from GitHub.** 
 
