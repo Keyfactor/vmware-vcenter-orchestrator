@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+  			<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>Keyfactor.Extensions.Orchestrators.Vcenter</AssemblyName>
@@ -25,7 +25,7 @@
     </ItemGroup>
     
     <ItemGroup> 
-        <None Update="manifes.json">
+        <None Update="manifest.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
