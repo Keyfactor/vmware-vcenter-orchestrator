@@ -1,3 +1,5 @@
+﻿extensions: designer.cs generated.cs
+extensions: .cs .cpp .h
 
 //  Copyright 2025 Keyfactor
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
@@ -6,12 +8,12 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 
-namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
-{ 
-    public class VcenterProperties
-    {
-        public string? ServerUsername { get; set; }
-        public string? ServerPassword { get; set; }
-        public string? ServerUseSsl { get; set; }
-    }
-}
+extensions: .aspx .ascx
+<%-- 
+
+--%>
+extensions: .vb
+extensions:  .xml .config .xsd
+<!--
+
+-->
