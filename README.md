@@ -1,161 +1,112 @@
-# VMware vCenter Orchestrator
+<h1 align="center" style="border-bottom: none">
+    VMware vCenter Universal Orchestrator Extension
+</h1>
 
-The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.
+<p align="center">
+  <!-- Badges -->
+<img src="https://img.shields.io/badge/integration_status-production-3D1973?style=flat-square" alt="Integration Status: production" />
+<a href="https://github.com/Keyfactor/vmware-vcenter-orchestrator/releases"><img src="https://img.shields.io/github/v/release/Keyfactor/vmware-vcenter-orchestrator?style=flat-square" alt="Release" /></a>
+<img src="https://img.shields.io/github/issues/Keyfactor/vmware-vcenter-orchestrator?style=flat-square" alt="Issues" />
+<img src="https://img.shields.io/github/downloads/Keyfactor/vmware-vcenter-orchestrator/total?style=flat-square&label=downloads&color=28B905" alt="GitHub Downloads (all assets, all releases)" />
+</p>
 
-#### Integration status: Prototype - Demonstration quality. Not for use in customer environments.
-
-
-## About the Keyfactor Universal Orchestrator Extension
-
-This repository contains a Universal Orchestrator Extension which is a plugin to the Keyfactor Universal Orchestrator. Within the Keyfactor Platform, Orchestrators are used to manage “certificate stores” &mdash; collections of certificates and roots of trust that are found within and used by various applications.
-
-The Universal Orchestrator is part of the Keyfactor software distribution and is available via the Keyfactor customer portal. For general instructions on installing Extensions, see the “Keyfactor Command Orchestrator Installation and Configuration Guide” section of the Keyfactor documentation. For configuration details of this specific Extension see below in this readme.
-
-The Universal Orchestrator is the successor to the Windows Orchestrator. This Orchestrator Extension plugin only works with the Universal Orchestrator and does not work with the Windows Orchestrator.
-
-
-## Support for VMware vCenter Orchestrator
-
-VMware vCenter Orchestrator is open source and there is **no SLA** for this tool/library/client. Keyfactor will address issues as resources become available. Keyfactor customers may request escalation by opening up a support ticket through their Keyfactor representative.
-
-###### To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
-
-
----
-
-
-
-
-## Keyfactor Version Supported
-
-The minimum version of the Keyfactor Universal Orchestrator Framework needed to run this version of the extension is 10.1
-
-## Platform Specific Notes
-
-The Keyfactor Universal Orchestrator may be installed on either Windows or Linux based platforms. The certificate operations supported by a capability may vary based what platform the capability is installed on. The table below indicates what capabilities are supported based on which platform the encompassing Universal Orchestrator is running.
-| Operation | Win | Linux |
-|-----|-----|------|
-|Supports Management Add|&check; |&check; |
-|Supports Management Remove|&check; |&check; |
-|Supports Create Store|  |  |
-|Supports Discovery|  |  |
-|Supports Renrollment|  |  |
-|Supports Inventory|&check; |&check; |
-
-
-
-
-
----
-
+<p align="center">
+  <!-- TOC -->
+  <a href="#support">
+    <b>Support</b>
+  </a>
+  ·
+  <a href="#installation">
+    <b>Installation</b>
+  </a>
+  ·
+  <a href="#license">
+    <b>License</b>
+  </a>
+  ·
+  <a href="https://github.com/orgs/Keyfactor/repositories?q=orchestrator">
+    <b>Related Integrations</b>
+  </a>
+</p>
 
 ## Overview
 
-The VMware vCenter Orchestrator extension remotely manages certificates used by VMware vCenter. The extension implements the Inventory, Management Add, and Management Remove job types.
+The VMware vCenter Universal Orchestrator extension remotely manages certificates used by VMware vCenter. The extension supports the Inventory, Management Add, and Management Remove job types. This enables the capability to create and remove trusted root chains and SSL certificates associated with VMware vCenter.
 
-The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
-VMware vCenter. The certificate type is automatically identified by the orchestrator.
+VMware vCenter uses certificates to secure communications between the different components of the vSphere environment. These certificates ensure data integrity, confidentiality, and authenticity. Managing these certificates is crucial for maintaining the security of the vSphere infrastructure. The VMware vCenter Universal Orchestrator extension automates and simplifies this process by integrating seamlessly with Keyfactor Command.
 
-## vCenter Configuration
 
-vCenter management is controlled by the vSphere client. Follow VMware's vCenter Server Configuration [documentation](https://docs.vmware.com/en/VMware-vSphere/7.0/vsphere-esxi-vcenter-server-703-configuration-guide.pdf) to configure a vSphere client and vCenter.
 
-## Keyfactor Configuration
+## Compatibility
 
-Follow the Keyfactor Orchestrator configuration guide to install the VMware vCenter Orchestrator extension.
+This integration is compatible with Keyfactor Universal Orchestrator version 10.1 and later.
 
-This guide uses the `kfutil` Keyfactor command line tool that offers convenient and powerful
-command line access to the Keyfactor platform. Before proceeding, ensure that `kfutil` is installed and configured
-by following the instructions here: [https://github.com/Keyfactor/kfutil](https://github.com/Keyfactor/kfutil)
+## Support
+The VMware vCenter Universal Orchestrator extension If you have a support issue, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com. 
+ 
+> To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
 
-Configuration is done in two steps:
-1. Create a new Keyfactor Certificate Store Type
-2. Create a new Keyfactor Certificate Store
+## Requirements & Prerequisites
 
-### Keyfactor Certificate Store Type Configuration
+Before installing the VMware vCenter Universal Orchestrator extension, we recommend that you install [kfutil](https://github.com/Keyfactor/kfutil). Kfutil is a command-line tool that simplifies the process of creating store types, installing extensions, and instantiating certificate stores in Keyfactor Command.
 
-Keyfactor Certificate Store Types are used to define and configure the platforms that store and use certificates that will be managed
-by Keyfactor Orchestrators. To create the VMware vCenter Certificate Store Type, run the following command with `kfutil`:
-   ```bash
-   cat << EOF > ./VmwareVcenter.json
-  {
-    "Name": "VMware vCenter",
-    "ShortName": "vCenter",
-    "Capability": "vCenter",
-    "StoreType": 107,
-    "ImportType": 107,
-    "LocalStore": false,
-    "SupportedOperations": {
-      "Add": true,
-      "Create": false,
-      "Discovery": false,
-      "Enrollment": false,
-      "Remove": true
-    },
-    "Properties": [
-      {
-        "StoreTypeId": 107,
-        "Name": "ServerUsername",
-        "DisplayName": "Server Username",
-        "Type": "Secret",
-        "DependsOn": null,
-        "DefaultValue": null,
-        "Required": false
-      },
-      {
-        "StoreTypeId": 107,
-        "Name": "ServerPassword",
-        "DisplayName": "Server Password",
-        "Type": "Secret",
-        "DependsOn": null,
-        "DefaultValue": null,
-        "Required": false
-      },
-      {
-        "StoreTypeId": 107,
-        "Name": "ServerUseSsl",
-        "DisplayName": "Use SSL",
-        "Type": "Bool",
-        "DependsOn": null,
-        "DefaultValue": "true",
-        "Required": true
-      }
-    ],
-    "EntryParameters": [],
-    "PasswordOptions": {
-      "EntrySupported": false,
-      "StoreRequired": false,
-      "Style": "Default"
-    },
-    "StorePathValue": "vCenter Certificates",
-    "PrivateKeyAllowed": "Optional",
-    "JobProperties": [],
-    "ServerRequired": true,
-    "PowerShell": false,
-    "BlueprintAllowed": false,
-    "CustomAliasAllowed": "Forbidden",
-    "ServerRegistration": 9,
-    "InventoryEndpoint": "/AnyInventory/Update",
-    "InventoryJobType": "1a063467-c439-4733-a380-c88be52597de",
-    "ManagementJobType": "40ec0a7e-d867-466e-8fd7-5d43605b9b10"
-  }
-   EOF
-   kfutil store-types create --from-file VmwareVcenter.json
-   ```
-### Keyfactor Store Configuration
 
-To create a new certificate store in Keyfactor Command, select the _Locations_ drop down, select _Certificate Stores_, and click the _Add_ button.
-fill the displayed form with the following values:
 
-| Parameter       | Value                  | Description                                                                         |
-|-----------------|------------------------|-------------------------------------------------------------------------------------|
-| Category        | 'VMware vCenter'       | The name of the VMware vCenter store type                                           |
-| Client Machine  | vSphere Domain Name    | The domain name of the vSphere client managing vCenter                              |
-| Store Path      | 'vCenter Certificates' | The _StorePathValue_ of the vCenter instance as set during store type configuration |
-| Server Username | Client secret Username | The secret vCenter username used to manage the vCenter connection                   |
-| Server Password | Client Secret Password | The secret vCenter password used to manage the vCenter connection                   |
+## Create the  Certificate Store Type
 
-### Important note about Trusted Root Chain Removal
+To use the VMware vCenter Universal Orchestrator extension, you **must** create the  Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
 
-Trusted root chains can be added and removed from the vCenter certificate store through the orchestrator. Note that the vCenter instance will be put into a bad state if the trusted root of the SSL certificate corresponding to the vSphere server is deleted from the certificate store.
 
+
+## Installation
+
+1. **Download the latest VMware vCenter Universal Orchestrator extension from GitHub.** 
+
+    Navigate to the [VMware vCenter Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/vmware-vcenter-orchestrator/releases/latest). Refer to the compatibility matrix below to determine whether the `net6.0` or `net8.0` asset should be downloaded. Then, click the corresponding asset to download the zip archive.
+    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `vmware-vcenter-orchestrator` .NET version to download |
+    | --------- | ----------- | ----------- | ----------- |
+    | Older than `11.0.0` | | | `net6.0` |
+    | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` | 
+    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` | 
+    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` | 
+    | `11.6` _and_ newer | `net8.0` | | `net8.0` |
+
+    Unzip the archive containing extension assemblies to a known location.
+
+    > **Note** If you don't see an asset with a corresponding .NET version, you should always assume that it was compiled for `net6.0`.
+
+2. **Locate the Universal Orchestrator extensions directory.**
+
+    * **Default on Windows** - `C:\Program Files\Keyfactor\Keyfactor Orchestrator\extensions`
+    * **Default on Linux** - `/opt/keyfactor/orchestrator/extensions`
+    
+3. **Create a new directory for the VMware vCenter Universal Orchestrator extension inside the extensions directory.**
+        
+    Create a new directory called `vmware-vcenter-orchestrator`.
+    > The directory name does not need to match any names used elsewhere; it just has to be unique within the extensions directory.
+
+4. **Copy the contents of the downloaded and unzipped assemblies from __step 2__ to the `vmware-vcenter-orchestrator` directory.**
+
+5. **Restart the Universal Orchestrator service.**
+
+    Refer to [Starting/Restarting the Universal Orchestrator service](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/StarttheService.htm).
+
+
+
+> The above installation steps can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
+
+
+
+## Defining Certificate Stores
+
+
+
+
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE).
+
+## Related Integrations
+
+See all [Keyfactor Universal Orchestrator extensions](https://github.com/orgs/Keyfactor/repositories?q=orchestrator).
