@@ -37,9 +37,14 @@
           "ShortName": "vCenter",
           "Capability": "vCenter",
           "LocalStore": false,
-          "ServerRequired": true,          
+          "ServerRequired": true,
           "StorePathType": "",
           "StorePathValue": "",
+          "PasswordOptions": {
+            "EntrySupported": false,
+            "StoreRequired": false,
+            "Style": "Default"
+          },
           "SupportedOperations": {
             "Add": true,
             "Create": false,
@@ -47,6 +52,9 @@
             "Enrollment": false,
             "Remove": true
           },
+          "EntryParameters": [],
+          "JobProperties": [],
+          "PrivateKeyAllowed": "Optional",
           "Properties": [
             {
               "Name": "ServerUsername",
@@ -66,16 +74,7 @@
             }
           ]
         }
-      ],
-      "EntryParameters": [],
-      "PasswordOptions": {
-        "EntrySupported": false,
-        "StoreRequired": false,
-        "Style": "Default"
-      },
-      "PrivateKeyAllowed": "Optional",
-      "JobProperties": [],
-      "ServerRequired": true
+      ]
     }
   }
 }
