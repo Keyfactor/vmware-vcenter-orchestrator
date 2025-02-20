@@ -1,34 +1,72 @@
 {
-  "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
-  "integration_type": "orchestrator",
-  "name": "VMware vCenter Orchestrator",
-  "status": "prototype",
-  "update_catalog": false,
-  "link_github": false,
-  "support_level": "kf-community",
-  "release_dir": "VmwareVcenterOrchestrator\\bin\\Release\\netcoreapp3.1",
-  "description": "The VMware vCenter Orchestrator extension acts as a proxy between Keyfactor and VMware vCenter that allows Keyfactor to manage vCenter certificates.",
+  "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
   "about": {
     "orchestrator": {
       "UOFramework": "10.1",
-      "win": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
-        "supportsReenrollment": false,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      },
-      "linux": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
-        "supportsReenrollment": false,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      }
+      "keyfactor_platform_version": "10.0",
+      "pam_support": false,      
+      "store_types": [
+        {
+          "Name": "VMware vCenter",
+          "ShortName": "vCenter",
+          "Capability": "vCenter",
+          "LocalStore": false,
+          "ServerRequired": true,
+          "PowerShell": false,
+          "BlueprintAllowed": true,
+          "StorePathType": "",
+          "StorePathValue": "",
+          "CustomAliasAllowed": "Optional",
+          "ClientMachineDescription": "The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'.",
+          "StorePathDescription": "A unique identifier for this store.  The actual value is unused by the orchestrator extension",
+          "PasswordOptions": {
+            "EntrySupported": false,
+            "StoreRequired": false,
+            "Style": "Default"
+          },
+          "SupportedOperations": {
+            "Add": true,
+            "Create": false,
+            "Discovery": false,
+            "Enrollment": false,
+            "Remove": true
+          },
+          "EntryParameters": [],
+          "JobProperties": [],
+          "PrivateKeyAllowed": "Optional",
+          "Properties": [
+            {
+              "Name": "ServerUsername",
+              "DisplayName": "Server Username",
+              "Type": "Secret",
+              "DependsOn": "",
+              "DefaultValue": "",
+              "Required": true,
+              "IsPamEligable": false,
+              "Description": "The vCenter username used to manage the vCenter connection"
+            },
+            {
+              "Name": "ServerPassword",
+              "DisplayName": "Server Password",
+              "Type": "Secret",
+              "DependsOn": "",
+              "DefaultValue": "",
+              "Required": true,
+              "IsPamEligable": false,
+              "Description": "The secret vCenter password used to manage the vCenter connection"
+            }
+          ]
+        }
+      ]
     }
-  }
+  },
+  "description": "The VMware vCenter Universal Orchestrator extension remotely manages certificates used by VMware vCenter, including inventory, addition, and removal of SSL certificates and trusted root chains.",
+  "integration_type": "orchestrator",
+  "link_github": true,
+  "name": "VMware vCenter Orchestrator",
+  "release_dir": "VmwareVcenterOrchestrator/bin/Release",
+  "release_project": "VmwareVcenterOrchestrator/VmwareVcenterOrchestrator.csproj",
+  "status": "production",
+  "support_level": "kf-supported",
+  "update_catalog": true
 }
