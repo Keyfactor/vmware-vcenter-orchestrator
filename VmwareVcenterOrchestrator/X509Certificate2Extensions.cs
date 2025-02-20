@@ -1,5 +1,7 @@
 ﻿using Keyfactor.Logging;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
@@ -62,7 +64,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
                 return string.Empty;
             };
 
-            var elementCount = certChain.ChainElements.Count();
+            var elementCount = certChain.ChainElements.Count;
             _logger.LogTrace($"success: cert chain has {elementCount} entries.");
 
             var rootChainPem = string.Empty;

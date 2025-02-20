@@ -18,6 +18,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 {
@@ -94,7 +98,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
         {
             var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
             var request_body = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
-            _logger.LogDebug("Calling PUT on vcenter endpoint for TLS certificates", request_body);
+            _logger.LogDebug($"Calling PUT on vcenter endpoint for TLS certificates: {request_body}");
             
             var response = await VcenterClient.PutAsync(TLSCERTENDPOINT, request_body);
 
@@ -107,7 +111,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
         public async Task RemoveVcenterTrustedRoot(string chain)
         {
             var request_uri = TRUSTEDROOTENDPOINT + chain;
-            _logger.LogDebug("Calling DELETE on vcenter endpoint for trusted root chain", request_uri);
+            _logger.LogDebug($"Calling DELETE on vcenter endpoint for trusted root chain: {request_uri}");
             var response = await VcenterClient.DeleteAsync(request_uri);
 
             if (!response.IsSuccessStatusCode) {
