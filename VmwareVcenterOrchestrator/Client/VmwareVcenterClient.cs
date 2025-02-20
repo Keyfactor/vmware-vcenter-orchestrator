@@ -14,6 +14,7 @@
 
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;

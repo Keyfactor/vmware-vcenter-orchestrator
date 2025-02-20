@@ -1,14 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-			  <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
-  			<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AssemblyName>Keyfactor.Extensions.Orchestrators.Vcenter</AssemblyName>
-        <RootNamespace>Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator</RootNamespace>
-        <LangVersion>latest</LangVersion>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+      <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+      <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+      <ImplicitUsings>disable</ImplicitUsings>
     </PropertyGroup>
     
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
