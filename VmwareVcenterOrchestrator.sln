@@ -1,8 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VmwareVcenterOrchestrator", "VmwareVcenterOrchestrator\VmwareVcenterOrchestrator.csproj", "{3645725A-2C84-4536-9A04-4F4CEDF30B21}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VmwareVcenterOrchestrator", "VmwareVcenterOrchestrator\VmwareVcenterOrchestrator.csproj", "{3645725A-2C84-4536-9A04-4F4CEDF30B21}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VmwareVcenterOrchestratorTest", "VmwareVcenterOrchestratorTest\VmwareVcenterOrchestratorTest.csproj", "{A1671009-5C03-4A81-84F8-4353928D7A57}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VmwareVcenterOrchestratorTest", "VmwareVcenterOrchestratorTest\VmwareVcenterOrchestratorTest.csproj", "{A1671009-5C03-4A81-84F8-4353928D7A57}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{53F1F754-B49A-4E83-9DF4-546399B5B89B}"
+	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.md = CHANGELOG.md
+		docsource\content.md = docsource\content.md
+		integration-manifest.json = integration-manifest.json
+		readme_source.md = readme_source.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,12 +23,18 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3645725A-2C84-4536-9A04-4F4CEDF30B21}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{A1671009-5C03-4A81-84F8-4353928D7A57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1671009-5C03-4A81-84F8-4353928D7A57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1671009-5C03-4A81-84F8-4353928D7A57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1671009-5C03-4A81-84F8-4353928D7A57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {41ACDDB6-C7D3-4F8A-AA63-A42CF04C06A4}
 	EndGlobalSection
 EndGlobal
