@@ -72,7 +72,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
         public async Task<VCenterTlsCertInfo> GetVcenterSslCertificate() 
         {
             //This endpoint does not return certificate chains
-            _logger.LogDebug("Calling GET on vcenter endpoint for TLS certificates", TLSCERTENDPOINT);
+            _logger.LogDebug($"Calling GET on vcenter endpoint {TLSCERTENDPOINT} for TLS certificates");
 
             var response = await VcenterClient.GetAsync(TLSCERTENDPOINT);
             

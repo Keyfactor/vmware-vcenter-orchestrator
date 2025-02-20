@@ -4,3 +4,12 @@ The VMware vCenter Universal Orchestrator extension remotely manages certificate
 
 VMware vCenter uses certificates to secure communications between the different components of the vSphere environment. These certificates ensure data integrity, confidentiality, and authenticity. Managing these certificates is crucial for maintaining the security of the vSphere infrastructure. The VMware vCenter Universal Orchestrator extension automates and simplifies this process by integrating seamlessly with Keyfactor Command.
 
+## Managing vCenter Certificates
+
+This orchestrator extension allows managing both Trusted root certificates as well as SSL/TLS certificates.  
+
+:warning: _Important note on certificate enrollment_
+
+In order to enroll a new Trusted Root Certificate from the platform, follow the normal steps for enrolling a certificate into the certificate store, but do not include the private key.
+- If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
+- If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.

@@ -1,28 +1,10 @@
 {
-  "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
+  "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
   "about": {
     "orchestrator": {
       "UOFramework": "10.1",
       "keyfactor_platform_version": "10.0",
-      "pam_support": false,
-      "win": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
-        "supportsReenrollment": false,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      },
-      "linux": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": true,
-        "supportsManagementRemove": true,
-        "supportsReenrollment": false,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      },
+      "pam_support": false,      
       "store_types": [
         {
           "Name": "VMware vCenter",
@@ -30,8 +12,13 @@
           "Capability": "vCenter",
           "LocalStore": false,
           "ServerRequired": true,
+          "Powershell": false,
+          "BlueprintAllowed": true,
           "StorePathType": "",
           "StorePathValue": "",
+          "CustomAliasAllowed": "Optional",
+          "ClientMachineDescription": "The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'.",
+          "StorePathDescription": "A unique identifier for this store.  The actual value is unused by the orchestrator extension",
           "PasswordOptions": {
             "EntrySupported": false,
             "StoreRequired": false,
@@ -54,7 +41,9 @@
               "Type": "Secret",
               "DependsOn": null,
               "DefaultValue": null,
-              "Required": true
+              "Required": true,
+              "IsPamEligable": false,
+              "Description": "The vCenter username used to manage the vCenter connection"
             },
             {
               "Name": "ServerPassword",
@@ -62,7 +51,9 @@
               "Type": "Secret",
               "DependsOn": null,
               "DefaultValue": null,
-              "Required": true
+              "Required": true,
+              "IsPamEligable": false,
+              "Description": "The secret vCenter password used to manage the vCenter connection"
             }
           ]
         }
@@ -73,7 +64,8 @@
   "integration_type": "orchestrator",
   "link_github": true,
   "name": "VMware vCenter Orchestrator",
-  "release_dir": "VmwareVcenterOrchestrator\\bin\\Release",
+  "release_dir": "VmwareVcenterOrchestrator/bin/Release",
+  "release_project": "VmwareVcenterOrchestrator/VmwareVcenterOrchestrator.csproj",
   "status": "production",
   "support_level": "kf-supported",
   "update_catalog": true
