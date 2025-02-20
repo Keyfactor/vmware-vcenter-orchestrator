@@ -54,7 +54,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var request = new HttpRequestMessage(HttpMethod.Post, APITOKENENDPOINT);
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
             
-            _logger.LogDebug("Calling POST on vcenter endpoint for TLS certificates", request);
+            _logger.LogDebug("Calling POST on vcenter endpoint for TLS certificates");
 
             var response = await VcenterClient.SendAsync(request);
 
