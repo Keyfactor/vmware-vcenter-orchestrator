@@ -27,13 +27,4 @@
         </None>
     </ItemGroup>
     
-    <ItemGroup>
-      <Reference Include="BouncyCastle.Crypto">
-        <HintPath>..\..\..\..\..\Program Files\Keyfactor\Keyfactor Orchestrator\BouncyCastle.Crypto.dll</HintPath>
-      </Reference>
-      <Reference Include="System.Security.Cryptography.Pkcs">
-        <HintPath>..\..\..\..\..\Program Files\Keyfactor\Keyfactor Orchestrator\System.Security.Cryptography.Pkcs.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-    
 </Project>
