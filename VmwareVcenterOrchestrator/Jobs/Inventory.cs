@@ -73,13 +73,13 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             // vCenter certs are in PEM format
             // Remove the BEGIN/END
             sslCert.cert = sslCert.cert.Replace(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM, string.Empty).Replace(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM, string.Empty);
-
+            
             // Create new inventory item for the certificate
 
             var inventoryItem = new CurrentInventoryItem()
             {
                 Alias = sslCert.thumbprint,
-                PrivateKeyEntry = false,
+                PrivateKeyEntry = true,
                 ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                 UseChainLevel = true,
                 Certificates = new string[] { sslCert.cert }

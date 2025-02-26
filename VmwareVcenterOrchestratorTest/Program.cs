@@ -6,7 +6,6 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 
-// See https://aka.ms/new-console-template for more information
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
