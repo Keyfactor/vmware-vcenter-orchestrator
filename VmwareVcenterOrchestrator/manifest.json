@@ -2,11 +2,11 @@
   "extensions": {
     "Keyfactor.Orchestrators.Extensions.IOrchestratorJobExtension": {
       "CertStores.vCenter.Inventory": {
-        "assemblypath": "Keyfactor.Extensions.Orchestrators.vCenter.dll",
+        "assemblypath": "VmwareVcenterOrchestrator.dll",
         "TypeFullName": "Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs.Inventory"
       },
       "CertStores.vCenter.Management": {
-        "assemblypath": "Keyfactor.Extensions.Orchestrators.vCenter.dll",
+        "assemblypath": "VmwareVcenterOrchestrator.dll",
         "TypeFullName": "Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs.Management"
       }
     }
