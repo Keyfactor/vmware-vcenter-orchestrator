@@ -38,10 +38,11 @@ VMware vCenter uses certificates to secure communications between the different 
 
 
 ### vCenter
-TODO Global Store Type Section is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
 
+The certificate store type of vCenter associated with this integration implements the Inventory, Management Add, and Management Remove job types.
 
-TODO Overview is a required section
+The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
+VMware vCenter. The certificate type is automatically identified by the orchestrator.  It does not manage ESXI host certificates.
 
 ## Compatibility
 
@@ -57,21 +58,11 @@ The VMware vCenter Universal Orchestrator extension If you have a support issue,
 Before installing the VMware vCenter Universal Orchestrator extension, we recommend that you install [kfutil](https://github.com/Keyfactor/kfutil). Kfutil is a command-line tool that simplifies the process of creating store types, installing extensions, and instantiating certificate stores in Keyfactor Command.
 
 
-### VMware vCenter Requirements
-TODO Global Store Type Section is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
-
-
-TODO Requirements is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
-
-
-
 
 ## Create the vCenter Certificate Store Type
 
 To use the VMware vCenter Universal Orchestrator extension, you **must** create the vCenter Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
 
-
-TODO Global Store Type Section is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
 
 
 * **Create vCenter using kfutil**:
@@ -178,22 +169,101 @@ TODO Global Store Type Section is an optional section. If this section doesn't s
 ## Defining Certificate Stores
 
 
-TODO Global Store Type Section is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
 
-TODO Certificate Store Configuration is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
+* **Manually with the Command UI**
+
+    <details><summary>Create Certificate Stores manually in the UI</summary>
+
+    1. **Navigate to the _Certificate Stores_ page in Keyfactor Command.**
+
+        Log into Keyfactor Command, toggle the _Locations_ dropdown, and click _Certificate Stores_.
+
+    2. **Add a Certificate Store.**
+
+        Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
+        | Attribute | Description |
+        | --------- | ----------- |
+        | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
+        | Container | Optional container to associate certificate store with. |
+        | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
+        | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
+        | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
+        | ServerUsername | The vCenter username used to manage the vCenter connection |
+        | ServerPassword | The secret vCenter password used to manage the vCenter connection |
 
 
+        
+
+    </details>
+
+* **Using kfutil**
+    
+    <details><summary>Create Certificate Stores with kfutil</summary>
+    
+    1. **Generate a CSV template for the vCenter certificate store**
+
+        ```shell
+        kfutil stores import generate-template --store-type-name vCenter --outpath vCenter.csv
+        ```
+    2. **Populate the generated CSV file**
+
+        Open the CSV file, and reference the table below to populate parameters for each **Attribute**.
+        | Attribute | Description |
+        | --------- | ----------- |
+        | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
+        | Container | Optional container to associate certificate store with. |
+        | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
+        | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
+        | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
+        | ServerUsername | The vCenter username used to manage the vCenter connection |
+        | ServerPassword | The secret vCenter password used to manage the vCenter connection |
+
+
+        
+
+    3. **Import the CSV file to create the certificate stores** 
+
+        ```shell
+        kfutil stores import csv --store-type-name vCenter --file vCenter.csv
+        ```
+    </details>
 
 > The content in this section can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
 
 
-## Discovering Certificate Stores with the Discovery Job
+### vCenter Configuration
 
-### VMware vCenter Discovery Job
-TODO Global Store Type Section is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
+vCenter management is controlled by the vSphere client. Follow VMware's vCenter Server Configuration [documentation](https://docs.vmware.com/en/VMware-vSphere/7.0/vsphere-esxi-vcenter-server-703-configuration-guide.pdf) to configure a vSphere client and vCenter.
 
+### Installing the extension
 
-TODO Discovery Job Configuration is an optional section. If this section doesn't seem necessary on initial glance, please delete it. Refer to the docs on [Confluence](https://keyfactor.atlassian.net/wiki/x/SAAyHg) for more info
+1. Stop the Orchestrator service if it is running.
+1. Create a folder in your Orchestrator extensions directory called "vCenter"
+1. Extract the contents of the release zip file into this folder.
+1. Start the Orchestrator service.
+
+### vCenter Certificate Store Parameters
+
+To create a new certificate store in Keyfactor Command, select the _Locations_ drop down, select _Certificate Stores_, and click the _Add_ button.
+fill the displayed form with the following values:
+
+| Parameter       | Value                  | Description                                                                         |
+|-----------------|------------------------|-------------------------------------------------------------------------------------|
+| Category        | 'VMware vCenter'       | The name of the VMware vCenter store type                                           |
+| Client Machine  | vSphere Domain Name    | The domain name of the vSphere client managing vCenter (ex: https://myvcenter.pki.local would use `myvcenter.pki.local`                             |
+| Store Path      | 'vCenter Certificates' | The _StorePathValue_ of the vCenter instance as set during store type configuration |
+| Server Username | Client secret Username | The secret vCenter username used to manage the vCenter connection                   |
+| Server Password | Client Secret Password | The secret vCenter password used to manage the vCenter connection                   |
+
+### Managing vCenter Certificates
+ 
+This orchestrator extension allows managing both Trusted root certificates as well as SSL/TLS certificates.  
+
+:warning: _Important note on certificate enrollment_
+
+In order to enroll a new Trusted Root Certificate from the platform, follow the normal steps for enrolling a certificate into the certificate store, but do not include the private key.
+- If the private key is omitted, the extension assumes we are replacing the Trusted Root Certificate.
+- If the private key is included, the extension assumes we are replacing the TLS certificate used for SSL communication.
 
 
 
