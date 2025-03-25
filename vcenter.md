@@ -30,7 +30,7 @@ fill the displayed form with the following values:
 | Server Password | Client Secret Password | The secret vCenter password used to manage the vCenter connection                   |
 
 ## Managing vCenter Certificates
-
+ 
 This orchestrator extension allows managing both Trusted root certificates as well as SSL/TLS certificates.  
 
 :warning: _Important note on certificate enrollment_
