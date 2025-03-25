@@ -118,6 +118,8 @@ TODO Global Store Type Section is an optional section. If this section doesn't s
 
     ![vCenter Advanced Tab](docsource/images/vCenter-advanced-store-type-dialog.png)
 
+    > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
+
     #### Custom Fields Tab
     Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
 
