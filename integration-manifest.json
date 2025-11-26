@@ -1,10 +1,19 @@
 {
   "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
+  "description": "The VMware vCenter Universal Orchestrator extension remotely manages certificates used by VMware vCenter, including inventory, addition, and removal of SSL certificates and trusted root chains.",
+  "integration_type": "orchestrator",
+  "link_github": true,
+  "name": "VMware vCenter Orchestrator",
+  "release_dir": "VmwareVcenterOrchestrator/bin/Release",
+  "release_project": "VmwareVcenterOrchestrator/VmwareVcenterOrchestrator.csproj",
+  "status": "production",
+  "support_level": "kf-supported",
+  "update_catalog": true,
   "about": {
     "orchestrator": {
       "UOFramework": "10.1",
       "keyfactor_platform_version": "10.0",
-      "pam_support": true,      
+      "pam_support": true,
       "store_types": [
         {
           "Name": "VMware vCenter",
@@ -59,14 +68,5 @@
         }
       ]
     }
-  },
-  "description": "The VMware vCenter Universal Orchestrator extension remotely manages certificates used by VMware vCenter, including inventory, addition, and removal of SSL certificates and trusted root chains.",
-  "integration_type": "orchestrator",
-  "link_github": true,
-  "name": "VMware vCenter Orchestrator",
-  "release_dir": "VmwareVcenterOrchestrator/bin/Release",
-  "release_project": "VmwareVcenterOrchestrator/VmwareVcenterOrchestrator.csproj",
-  "status": "production",
-  "support_level": "kf-supported",
-  "update_catalog": true
+  }
 }
