@@ -9,8 +9,10 @@
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Extensions;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using VmwareVcenterOrchestrator;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
@@ -20,6 +22,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         protected VmwareVcenterClient VcenterClient { get; private set; }
 
+        internal protected IPAMSecretResolver PamSecretResolver { get; set; }
+
         protected void Initialize(CertificateStore details)
         {
             ILogger logger = LogHandler.GetReflectedClassLogger(this);
@@ -28,8 +32,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             dynamic properties = JsonConvert.DeserializeObject(details.Properties);
 
             string ClientMachine = details.ClientMachine;
-            string Username = properties.ServerUsername;
-            string Password = properties.ServerPassword;
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, logger, "Server Username", properties.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, logger, "Server Password", properties.ServerPassword);
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);            
         }
