@@ -49,9 +49,9 @@ VMware vCenter. The certificate type is automatically identified by the orchestr
 This integration is compatible with Keyfactor Universal Orchestrator version 10.1 and later.
 
 ## Support
-The VMware vCenter Universal Orchestrator extension If you have a support issue, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com. 
- 
-> To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
+The VMware vCenter Universal Orchestrator extension is supported by Keyfactor. If you require support for any issues or have feature request, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
+
+> If you want to contribute bug fixes or additional enhancements, use the **[Pull requests](../../pulls)** tab.
 
 ## Requirements & Prerequisites
 
@@ -59,86 +59,117 @@ Before installing the VMware vCenter Universal Orchestrator extension, we recomm
 
 
 
-## Create the vCenter Certificate Store Type
+| Operation    | Is Supported                                                                                                           |
+|--------------|------------------------------------------------------------------------------------------------------------------------|
+| Add          | ✅ Checked        |
+| Remove       | ✅ Checked     |
+| Discovery    | 🔲 Unchecked  |
+| Reenrollment | 🔲 Unchecked |
+| Create       | 🔲 Unchecked     |
 
-To use the VMware vCenter Universal Orchestrator extension, you **must** create the vCenter Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
+#### Store Type Creation
+
+##### Using kfutil:
+`kfutil` is a custom CLI for the Keyfactor Command API and can be used to create certificate store types.
+For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
+   <details><summary>Click to expand vCenter kfutil details</summary>
 
 
 
-* **Create vCenter using kfutil**:
+#### Manual Creation
+Below are instructions on how to create the vCenter store type manually in
+the Keyfactor Command Portal
+   <details><summary>Click to expand manual vCenter details</summary>
 
-    ```shell
-    # VMware vCenter
-    kfutil store-types create vCenter
-    ```
+   Create a store type called `vCenter` with the attributes in the tables below:
 
-* **Create vCenter manually in the Command UI**:
-    <details><summary>Create vCenter manually in the Command UI</summary>
+   ##### Basic Tab
+   | Attribute | Value | Description |
+   | --------- | ----- | ----- |
+   | Name | VMware vCenter | Display name for the store type (may be customized) |
+   | Short Name | vCenter | Short display name for the store type |
+   | Capability | vCenter | Store type name orchestrator will register with. Check the box to allow entry of value |
+   | Supports Add | ✅ Checked | Check the box. Indicates that the Store Type supports Management Add |
+   | Supports Remove | ✅ Checked | Check the box. Indicates that the Store Type supports Management Remove |
+   | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
+   | Supports Reenrollment | 🔲 Unchecked |  Indicates that the Store Type supports Reenrollment |
+   | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
+   | Needs Server | ✅ Checked | Determines if a target server name is required when creating store |
+   | Blueprint Allowed | ✅ Checked | Determines if store type may be included in an Orchestrator blueprint |
+   | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
+   | Requires Store Password | 🔲 Unchecked | Enables users to optionally specify a store password when defining a Certificate Store. |
+   | Supports Entry Password | 🔲 Unchecked | Determines if an individual entry within a store can have a password. |
 
-    Create a store type called `vCenter` with the attributes in the tables below:
+   The Basic tab should look like this:
 
-    #### Basic Tab
-    | Attribute | Value | Description |
-    | --------- | ----- | ----- |
-    | Name | VMware vCenter | Display name for the store type (may be customized) |
-    | Short Name | vCenter | Short display name for the store type |
-    | Capability | vCenter | Store type name orchestrator will register with. Check the box to allow entry of value |
-    | Supports Add | ✅ Checked | Check the box. Indicates that the Store Type supports Management Add |
-    | Supports Remove | ✅ Checked | Check the box. Indicates that the Store Type supports Management Remove |
-    | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
-    | Supports Reenrollment | 🔲 Unchecked |  Indicates that the Store Type supports Reenrollment |
-    | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
-    | Needs Server | ✅ Checked | Determines if a target server name is required when creating store |
-    | Blueprint Allowed | ✅ Checked | Determines if store type may be included in an Orchestrator blueprint |
-    | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
-    | Requires Store Password | 🔲 Unchecked | Enables users to optionally specify a store password when defining a Certificate Store. |
-    | Supports Entry Password | 🔲 Unchecked | Determines if an individual entry within a store can have a password. |
+   ![vCenter Basic Tab](docsource/images/vCenter-basic-store-type-dialog.png)
 
-    The Basic tab should look like this:
+   ##### Advanced Tab
+   | Attribute | Value | Description |
+   | --------- | ----- | ----- |
+   | Supports Custom Alias | Optional | Determines if an individual entry within a store can have a custom Alias. |
+   | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
+   | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
 
-    ![vCenter Basic Tab](docsource/images/vCenter-basic-store-type-dialog.png)
+   The Advanced tab should look like this:
 
-    #### Advanced Tab
-    | Attribute | Value | Description |
-    | --------- | ----- | ----- |
-    | Supports Custom Alias | Optional | Determines if an individual entry within a store can have a custom Alias. |
-    | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
-    | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
+   ![vCenter Advanced Tab](docsource/images/vCenter-advanced-store-type-dialog.png)
 
-    The Advanced tab should look like this:
+   > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
 
-    ![vCenter Advanced Tab](docsource/images/vCenter-advanced-store-type-dialog.png)
+   ##### Custom Fields Tab
+   Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
+
+   | Name | Display Name | Description | Type | Default Value/Options | Required |
+   | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
+   | ServerUsername | Server Username | The vCenter username used to manage the vCenter connection | Secret |  | ✅ Checked |
+   | ServerPassword | Server Password | The secret vCenter password used to manage the vCenter connection | Secret |  | ✅ Checked |
+
+   The Custom Fields tab should look like this:
+
+   ![vCenter Custom Fields Tab](docsource/images/vCenter-custom-fields-store-type-dialog.png)
+
+
+   ###### Server Username
+   The vCenter username used to manage the vCenter connection
 
     > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
 
     #### Custom Fields Tab
     Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
 
-    | Name | Display Name | Description | Type | Default Value/Options | Required |
-    | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
-    | ServerUsername | Server Username | The vCenter username used to manage the vCenter connection | Secret |  | ✅ Checked |
-    | ServerPassword | Server Password | The secret vCenter password used to manage the vCenter connection | Secret |  | ✅ Checked |
-
-    The Custom Fields tab should look like this:
-
-    ![vCenter Custom Fields Tab](docsource/images/vCenter-custom-fields-store-type-dialog.png)
+   > [!IMPORTANT]
+   > This field is created by the `Needs Server` on the Basic tab, do not create this field manually.
 
 
 
-    </details>
+
+   ###### Server Password
+   The secret vCenter password used to manage the vCenter connection
+
+
+   > [!IMPORTANT]
+   > This field is created by the `Needs Server` on the Basic tab, do not create this field manually.
+
+
+
+
+
+
+   </details>
 
 ## Installation
 
-1. **Download the latest VMware vCenter Universal Orchestrator extension from GitHub.** 
+1. **Download the latest VMware vCenter Universal Orchestrator extension from GitHub.**
 
-    Navigate to the [VMware vCenter Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/vmware-vcenter-orchestrator/releases/latest). Refer to the compatibility matrix below to determine whether the `net6.0` or `net8.0` asset should be downloaded. Then, click the corresponding asset to download the zip archive.
-    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `vmware-vcenter-orchestrator` .NET version to download |
-    | --------- | ----------- | ----------- | ----------- |
-    | Older than `11.0.0` | | | `net6.0` |
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` | 
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` | 
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` | 
-    | `11.6` _and_ newer | `net8.0` | | `net8.0` |
+    Navigate to the [VMware vCenter Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/vmware-vcenter-orchestrator/releases/latest). Refer to the compatibility matrix below to determine the asset should be downloaded. Then, click the corresponding asset to download the zip archive.
+
+   | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `vmware-vcenter-orchestrator` .NET version to download |
+   | --------- | ----------- | ----------- | ----------- |
+   | Older than `11.0.0` | | | `net6.0` |
+   | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` |
+   | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` || Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` |
+   | `11.6` _and_ newer | `net8.0` | | `net8.0` | 
 
     Unzip the archive containing extension assemblies to a known location.
 
@@ -148,9 +179,9 @@ To use the VMware vCenter Universal Orchestrator extension, you **must** create 
 
     * **Default on Windows** - `C:\Program Files\Keyfactor\Keyfactor Orchestrator\extensions`
     * **Default on Linux** - `/opt/keyfactor/orchestrator/extensions`
-    
+
 3. **Create a new directory for the VMware vCenter Universal Orchestrator extension inside the extensions directory.**
-        
+
     Create a new directory called `vmware-vcenter-orchestrator`.
     > The directory name does not need to match any names used elsewhere; it just has to be unique within the extensions directory.
 
@@ -161,8 +192,14 @@ To use the VMware vCenter Universal Orchestrator extension, you **must** create 
     Refer to [Starting/Restarting the Universal Orchestrator service](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/StarttheService.htm).
 
 
+6. **(optional) PAM Integration**
 
-> The above installation steps can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
+    The VMware vCenter Universal Orchestrator extension is compatible with all supported Keyfactor PAM extensions to resolve PAM-eligible secrets. PAM extensions running on Universal Orchestrators enable secure retrieval of secrets from a connected PAM provider.
+
+    To configure a PAM provider, [reference the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam) to select an extension and follow the associated instructions to install it on the Universal Orchestrator (remote).
+
+
+> The above installation steps can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
 
 
 
@@ -228,7 +265,7 @@ To use the VMware vCenter Universal Orchestrator extension, you **must** create 
         ```
     </details>
 
-> The content in this section can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
+> The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
 
 
 ### vCenter Configuration
