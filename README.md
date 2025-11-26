@@ -37,13 +37,6 @@ VMware vCenter uses certificates to secure communications between the different 
 
 
 
-### vCenter
-
-The certificate store type of vCenter associated with this integration implements the Inventory, Management Add, and Management Remove job types.
-
-The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
-VMware vCenter. The certificate type is automatically identified by the orchestrator.  It does not manage ESXI host certificates.
-
 ## Compatibility
 
 This integration is compatible with Keyfactor Universal Orchestrator version 10.1 and later.
@@ -58,6 +51,22 @@ The VMware vCenter Universal Orchestrator extension is supported by Keyfactor. I
 Before installing the VMware vCenter Universal Orchestrator extension, we recommend that you install [kfutil](https://github.com/Keyfactor/kfutil). Kfutil is a command-line tool that simplifies the process of creating store types, installing extensions, and instantiating certificate stores in Keyfactor Command.
 
 
+
+## vCenter Certificate Store Type
+
+To use the VMware vCenter Universal Orchestrator extension, you **must** create the vCenter Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
+
+
+
+The certificate store type of vCenter associated with this integration implements the Inventory, Management Add, and Management Remove job types.
+
+The Add and Remove operations have the ability to create and remove trusted root chains and SSL certificates associated with
+VMware vCenter. The certificate type is automatically identified by the orchestrator.  It does not manage ESXI host certificates.
+
+
+
+
+#### Supported Operations
 
 | Operation    | Is Supported                                                                                                           |
 |--------------|------------------------------------------------------------------------------------------------------------------------|
@@ -74,6 +83,21 @@ Before installing the VMware vCenter Universal Orchestrator extension, we recomm
 For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
    <details><summary>Click to expand vCenter kfutil details</summary>
 
+   ##### Using online definition from GitHub:
+   This will reach out to GitHub and pull the latest store-type definition
+   ```shell
+   # VMware vCenter
+   kfutil store-types create vCenter
+   ```
+
+   ##### Offline creation using integration-manifest file:
+   If required, it is possible to create store types from the [integration-manifest.json](./integration-manifest.json) included in this repo.
+   You would first download the [integration-manifest.json](./integration-manifest.json) and then run the following command
+   in your offline environment.
+   ```shell
+   kfutil store-types create --from-file integration-manifest.json
+   ```
+   </details>
 
 
 #### Manual Creation
@@ -133,10 +157,6 @@ the Keyfactor Command Portal
    ###### Server Username
    The vCenter username used to manage the vCenter connection
 
-    > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
-
-    #### Custom Fields Tab
-    Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
 
    > [!IMPORTANT]
    > This field is created by the `Needs Server` on the Basic tab, do not create this field manually.
@@ -207,63 +227,81 @@ the Keyfactor Command Portal
 
 
 
-* **Manually with the Command UI**
+### Store Creation
 
-    <details><summary>Create Certificate Stores manually in the UI</summary>
+#### Manually with the Command UI
 
-    1. **Navigate to the _Certificate Stores_ page in Keyfactor Command.**
+<details><summary>Click to expand details</summary>
 
-        Log into Keyfactor Command, toggle the _Locations_ dropdown, and click _Certificate Stores_.
+1. **Navigate to the _Certificate Stores_ page in Keyfactor Command.**
 
-    2. **Add a Certificate Store.**
+    Log into Keyfactor Command, toggle the _Locations_ dropdown, and click _Certificate Stores_.
 
-        Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
-        | Container | Optional container to associate certificate store with. |
-        | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
-        | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
-        | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
-        | ServerUsername | The vCenter username used to manage the vCenter connection |
-        | ServerPassword | The secret vCenter password used to manage the vCenter connection |
+2. **Add a Certificate Store.**
 
+    Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
 
-        
+   | Attribute | Description                                             |
+   | --------- |---------------------------------------------------------|
+   | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
+   | Container | Optional container to associate certificate store with. |
+   | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
+   | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
+   | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
+   | ServerUsername | The vCenter username used to manage the vCenter connection |
+   | ServerPassword | The secret vCenter password used to manage the vCenter connection |
 
-    </details>
-
-* **Using kfutil**
-    
-    <details><summary>Create Certificate Stores with kfutil</summary>
-    
-    1. **Generate a CSV template for the vCenter certificate store**
-
-        ```shell
-        kfutil stores import generate-template --store-type-name vCenter --outpath vCenter.csv
-        ```
-    2. **Populate the generated CSV file**
-
-        Open the CSV file, and reference the table below to populate parameters for each **Attribute**.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
-        | Container | Optional container to associate certificate store with. |
-        | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
-        | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
-        | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
-        | ServerUsername | The vCenter username used to manage the vCenter connection |
-        | ServerPassword | The secret vCenter password used to manage the vCenter connection |
+</details>
 
 
-        
 
-    3. **Import the CSV file to create the certificate stores** 
+#### Using kfutil CLI
 
-        ```shell
-        kfutil stores import csv --store-type-name vCenter --file vCenter.csv
-        ```
-    </details>
+<details><summary>Click to expand details</summary>
+
+1. **Generate a CSV template for the vCenter certificate store**
+
+    ```shell
+    kfutil stores import generate-template --store-type-name vCenter --outpath vCenter.csv
+    ```
+2. **Populate the generated CSV file**
+
+    Open the CSV file, and reference the table below to populate parameters for each **Attribute**.
+
+   | Attribute | Description |
+   | --------- | ----------- |
+   | Category | Select "VMware vCenter" or the customized certificate store name from the previous step. |
+   | Container | Optional container to associate certificate store with. |
+   | Client Machine | The domain name of the vSphere client managing vCenter (url to vCenter host without the 'https://'. |
+   | Store Path | A unique identifier for this store.  The actual value is unused by the orchestrator extension |
+   | Orchestrator | Select an approved orchestrator capable of managing `vCenter` certificates. Specifically, one with the `vCenter` capability. |
+   | Properties.ServerUsername | The vCenter username used to manage the vCenter connection |
+   | Properties.ServerPassword | The secret vCenter password used to manage the vCenter connection |
+
+3. **Import the CSV file to create the certificate stores**
+
+    ```shell
+    kfutil stores import csv --store-type-name vCenter --file vCenter.csv
+    ```
+
+</details>
+
+
+#### PAM Provider Eligible Fields
+<details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
+
+If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
+
+   | Attribute | Description |
+   | --------- | ----------- |
+   | ServerUsername | The vCenter username used to manage the vCenter connection |
+   | ServerPassword | The secret vCenter password used to manage the vCenter connection |
+
+Please refer to the **Universal Orchestrator (remote)** usage section ([PAM providers on the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam)) for your selected PAM provider for instructions on how to load attributes orchestrator-side.
+> Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself.
+
+</details>
+
 
 > The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
 
