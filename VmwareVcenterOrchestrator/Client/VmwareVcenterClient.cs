@@ -11,11 +11,11 @@ using Keyfactor.Logging;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 {
@@ -83,14 +83,17 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var sslCertResp = await response.Content.ReadAsStringAsync();
-            var SslCert = JsonConvert.DeserializeObject<VCenterTlsCertInfo>(sslCertResp);
+            _logger.LogTrace($"sslCertString: {sslCertResp}");
+            _logger.LogTrace("attempting to deserialize the cert..");
+            var sslCert = JsonSerializer.Deserialize<VCenterTlsCertInfo>(sslCertResp);
+            _logger.LogTrace($"successfully deserialized the response; cert content: {sslCert.cert}");
 
-            return SslCert;
+            return sslCert;
         }
 
         public async Task ReplaceVcenterSslCertificate(VCenterTlsCertSet cert)
         {
-            var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
+            var jsonTrustedRootChain = JsonSerializer.Serialize(cert);
             var request_body = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             _logger.LogDebug($"Calling PUT on vcenter endpoint for TLS certificates: {request_body}");
 
@@ -140,7 +143,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
                 _logger.LogError($"There was an error retrieving the trusted root chains: {LogHandler.FlattenException(ex)}");
                 throw;
             }
-            trustedRoots = JsonConvert.DeserializeObject<List<VCenterTrustedRootChainsSummary>>(responseContent);
+            trustedRoots = JsonSerializer.Deserialize<List<VCenterTrustedRootChainsSummary>>(responseContent);
             var chains = trustedRoots.Select(tr => tr.chain).ToList();
 
             return chains;
@@ -160,13 +163,13 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
-            var trustedRootInfo = JsonConvert.DeserializeObject<VCenterTrustedRootChainsInfo>(responseContent);
+            var trustedRootInfo = JsonSerializer.Deserialize<VCenterTrustedRootChainsInfo>(responseContent);
             return trustedRootInfo;
         }
 
         public async Task AddTrustedRoot(VCenterTrustedRootChainsCreate trustedRootChain)
         {
-            var jsonTrustedRootChain = JsonConvert.SerializeObject(trustedRootChain);
+            var jsonTrustedRootChain = JsonSerializer.Serialize(trustedRootChain);
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             _logger.LogTrace("Calling POST on vcenter endpoint for trusted root chain");
 
