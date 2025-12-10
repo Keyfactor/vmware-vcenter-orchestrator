@@ -13,6 +13,7 @@ using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
@@ -20,7 +21,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
     [Job("Inventory")]
     public class Inventory : VmwareVcenterJob<Inventory>, IInventoryJobExtension
     {
-        ILogger _logger = LogHandler.GetClassLogger<Inventory>();
+        public Inventory(IPAMSecretResolver resolver) : base(resolver) { }
 
         public JobResult ProcessJob(InventoryJobConfiguration config, SubmitInventoryUpdate cb)
         {

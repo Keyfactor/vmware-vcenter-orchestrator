@@ -19,23 +19,29 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
     public abstract class VmwareVcenterJob<T> : IOrchestratorJobExtension
     {
         public string ExtensionName => "Vcenter";
+        internal protected ILogger _logger { get; set; }
 
         protected VmwareVcenterClient VcenterClient { get; private set; }
 
         internal protected IPAMSecretResolver PamSecretResolver { get; set; }
 
+        public VmwareVcenterJob(IPAMSecretResolver resolver)
+        {
+            PamSecretResolver = resolver;
+        }
+
         protected void Initialize(CertificateStore details)
         {
-            ILogger logger = LogHandler.GetReflectedClassLogger(this);
-            logger.LogTrace($"Certificate Store Configuration: {JsonConvert.SerializeObject(details)}");
-            logger.LogDebug("Initializing VmwareVsphereClient");
+            _logger = LogHandler.GetClassLogger(GetType());
+            _logger.LogTrace($"Certificate Store Configuration: {JsonConvert.SerializeObject(details)}");
+            _logger.LogDebug("Initializing VmwareVsphereClient");
             dynamic properties = JsonConvert.DeserializeObject(details.Properties);
 
             string ClientMachine = details.ClientMachine;
-            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, logger, "Server Username", properties.ServerUsername);
-            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, logger, "Server Password", properties.ServerPassword);
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
 
-            VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);            
+            VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
         }
     }
 }
