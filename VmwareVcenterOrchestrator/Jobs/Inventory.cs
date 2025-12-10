@@ -25,8 +25,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         public JobResult ProcessJob(InventoryJobConfiguration config, SubmitInventoryUpdate cb)
         {
-            _logger.LogDebug($"Beginning VMware vCenter Inventory Job");
-
             JobResult result = new JobResult
             {
                 Result = OrchestratorJobStatusJobResult.Failure,
@@ -34,6 +32,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             };
 
             Initialize(config.CertificateStoreDetails);
+            
+            _logger.LogDebug($"Beginning VMware vCenter Inventory Job");
 
             List<CurrentInventoryItem> inventoryItems;
 

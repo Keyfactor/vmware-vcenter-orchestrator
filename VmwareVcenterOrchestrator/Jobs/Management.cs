@@ -25,9 +25,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         public JobResult ProcessJob(ManagementJobConfiguration config)
         {
-            _logger.LogDebug("Beginning Vmware Vcenter Management Job");
-
             Initialize(config.CertificateStoreDetails);
+            _logger.LogDebug("Beginning Vmware Vcenter Management Job");
 
             JobResult result = new JobResult
             {
