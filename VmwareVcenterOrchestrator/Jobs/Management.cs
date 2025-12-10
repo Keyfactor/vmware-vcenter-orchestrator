@@ -14,19 +14,19 @@ using System.Threading.Tasks;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
     public class Management : VmwareVcenterJob<Management>, IManagementJobExtension
     {
-        ILogger _logger = LogHandler.GetClassLogger<Management>();
+        public Management(IPAMSecretResolver resolver) : base(resolver) { }
 
         public JobResult ProcessJob(ManagementJobConfiguration config)
         {
-            _logger.LogDebug("Beginning Vmware Vcenter Management Job");
-
             Initialize(config.CertificateStoreDetails);
+            _logger.LogDebug("Beginning Vmware Vcenter Management Job");
 
             JobResult result = new JobResult
             {
