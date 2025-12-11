@@ -19,21 +19,21 @@ using Microsoft.Extensions.Logging;
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
     [Job("Inventory")]
-    public class Inventory : VmwareVcenterJob<Inventory>, IInventoryJobExtension
+    public class Inventory : VmwareVcenterJob, IInventoryJobExtension
     {
         public Inventory(IPAMSecretResolver resolver) : base(resolver) { }
 
         public JobResult ProcessJob(InventoryJobConfiguration config, SubmitInventoryUpdate cb)
         {
+            Initialize(config);
+
+            _logger.LogDebug($"Beginning VMware vCenter Inventory Job");
+
             JobResult result = new JobResult
             {
                 Result = OrchestratorJobStatusJobResult.Failure,
                 JobHistoryId = config.JobHistoryId
             };
-
-            Initialize(config.CertificateStoreDetails);
-            
-            _logger.LogDebug($"Beginning VMware vCenter Inventory Job");
 
             List<CurrentInventoryItem> inventoryItems;
 

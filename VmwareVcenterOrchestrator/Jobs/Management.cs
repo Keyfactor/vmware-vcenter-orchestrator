@@ -19,13 +19,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
-    public class Management : VmwareVcenterJob<Management>, IManagementJobExtension
+    public class Management : VmwareVcenterJob, IManagementJobExtension
     {
         public Management(IPAMSecretResolver resolver) : base(resolver) { }
 
         public JobResult ProcessJob(ManagementJobConfiguration config)
         {
-            Initialize(config.CertificateStoreDetails);
+            Initialize(config);
+
             _logger.LogDebug("Beginning Vmware Vcenter Management Job");
 
             JobResult result = new JobResult
