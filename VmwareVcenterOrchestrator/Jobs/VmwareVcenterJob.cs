@@ -45,8 +45,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             _logger.LogTrace($"PamSecretResolver is {(PamSecretResolver == null ? "" : "not")} null");
 
             string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
-            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", config.ServerUsername as string);
-            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", config.ServerPassword as string);
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
         }
