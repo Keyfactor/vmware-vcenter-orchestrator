@@ -13,17 +13,20 @@ using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
     [Job("Inventory")]
-    public class Inventory : VmwareVcenterJob<Inventory>, IInventoryJobExtension
+    public class Inventory : VmwareVcenterJob, IInventoryJobExtension
     {
-        ILogger _logger = LogHandler.GetClassLogger<Inventory>();
+        public Inventory(IPAMSecretResolver resolver) : base(resolver) { }
 
         public JobResult ProcessJob(InventoryJobConfiguration config, SubmitInventoryUpdate cb)
         {
+            Initialize(config);
+
             _logger.LogDebug($"Beginning VMware vCenter Inventory Job");
 
             JobResult result = new JobResult
@@ -32,19 +35,21 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 JobHistoryId = config.JobHistoryId
             };
 
-            Initialize(config.CertificateStoreDetails);
-
             List<CurrentInventoryItem> inventoryItems;
 
             try
             {
                 //inventory ssl certificate and trusted root certificates
-                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate().Result).ToList();
+                _logger.LogTrace("adding the SSL cert to the inventory..");
+                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate().GetAwaiter().GetResult())?.ToList();
+                _logger.LogTrace("successfully added the SSL cert to the inventory");
 
-                var trustedRootChains = VcenterClient.GetTrustedRootChains().Result;
+                _logger.LogTrace("retrieving the trusted root chains");
+                var trustedRootChains = VcenterClient.GetTrustedRootChains().GetAwaiter().GetResult();
 
                 foreach (string trustedRootChain in trustedRootChains)
                 {
+                    _logger.LogTrace($"formatting the trusted root: {trustedRootChain}");
                     CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetTrustedRootChain(trustedRootChain).Result);
                     inventoryItems.Add(trustedRootInventoryItem);
                 }
@@ -68,6 +73,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         public IEnumerable<CurrentInventoryItem> FormatSslCert(VCenterTlsCertInfo sslCert)
         {
+            _logger.MethodEntry();
             var inventoryItems = new List<CurrentInventoryItem>();
 
             // vCenter certs are in PEM format
@@ -90,6 +96,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
         public CurrentInventoryItem FormatTrustedRoot(VCenterTrustedRootChainsInfo trustedRootInfo)
         {
+            _logger.MethodEntry();
             //Format the retrieved trusted root chain certificate
             //Remove attached X509 CRL Cert if it exists            
             var index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM);

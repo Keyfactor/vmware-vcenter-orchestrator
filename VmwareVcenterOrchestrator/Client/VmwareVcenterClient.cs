@@ -11,11 +11,11 @@ using Keyfactor.Logging;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
 {
@@ -50,10 +50,10 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
         {
             var credentials = username + ":" + password;
             var encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
-            
+
             var request = new HttpRequestMessage(HttpMethod.Post, APITOKENENDPOINT);
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encodedCredentials);
-            
+
             _logger.LogDebug("Calling POST on vcenter endpoint for TLS certificates");
 
             var response = await VcenterClient.SendAsync(request);
@@ -65,102 +65,119 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var apiKey = await response.Content.ReadAsStringAsync();
-                        
+
             return apiKey.Trim('\"');
         }
 
-        public async Task<VCenterTlsCertInfo> GetVcenterSslCertificate() 
+        public async Task<VCenterTlsCertInfo> GetVcenterSslCertificate()
         {
             //This endpoint does not return certificate chains
             _logger.LogDebug($"Calling GET on vcenter endpoint {TLSCERTENDPOINT} for TLS certificates");
 
             var response = await VcenterClient.GetAsync(TLSCERTENDPOINT);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = response.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage.ToString());
             }
 
-            var sslCertResp = await response.Content.ReadAsStringAsync();            
-            var SslCert = JsonConvert.DeserializeObject<VCenterTlsCertInfo>(sslCertResp);
-            
-            return SslCert;
+            var sslCertResp = await response.Content.ReadAsStringAsync();
+            _logger.LogTrace($"sslCertString: {sslCertResp}");
+            _logger.LogTrace("attempting to deserialize the cert..");
+            var sslCert = JsonSerializer.Deserialize<VCenterTlsCertInfo>(sslCertResp);
+            _logger.LogTrace($"successfully deserialized the response; cert content: {sslCert.cert}");
+
+            return sslCert;
         }
 
         public async Task ReplaceVcenterSslCertificate(VCenterTlsCertSet cert)
         {
-            var jsonTrustedRootChain = JsonConvert.SerializeObject(cert);
+            var jsonTrustedRootChain = JsonSerializer.Serialize(cert);
             var request_body = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
             _logger.LogDebug($"Calling PUT on vcenter endpoint for TLS certificates: {request_body}");
-            
+
             var response = await VcenterClient.PutAsync(TLSCERTENDPOINT, request_body);
 
-            if (!response.IsSuccessStatusCode) {
-                var errorMessage = await response.Content.ReadAsStringAsync();                
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage);
-            }            
+            }
         }
-        
+
         public async Task RemoveVcenterTrustedRoot(string chain)
         {
             var request_uri = TRUSTEDROOTENDPOINT + chain;
             _logger.LogDebug($"Calling DELETE on vcenter endpoint for trusted root chain: {request_uri}");
             var response = await VcenterClient.DeleteAsync(request_uri);
 
-            if (!response.IsSuccessStatusCode) {
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage);
-            }            
-        }
-        
-        public async Task<List<string>> GetTrustedRootChains()
-        {
-            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain");
-            var response = await VcenterClient.GetAsync(TRUSTEDROOTENDPOINT);
-            
             if (!response.IsSuccessStatusCode)
             {
-                var errorMessage = await response.Content.ReadAsStringAsync();                
+                var errorMessage = await response.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage);
             }
+        }
 
-            var responseContent = await response.Content.ReadAsStringAsync();
-            
-            var trustedRoots = JsonConvert.DeserializeObject<List<VCenterTrustedRootChainsSummary>>(responseContent);
+        public async Task<List<string>> GetTrustedRootChains()
+        {
+            _logger.MethodEntry();
+            var trustedRoots = new List<VCenterTrustedRootChainsSummary>();
+            string responseContent;
+
+            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain");
+            try
+            {
+                var response = await VcenterClient.GetAsync(TRUSTEDROOTENDPOINT);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    throw new Exception(errorMessage);
+                }
+
+                responseContent = await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"There was an error retrieving the trusted root chains: {LogHandler.FlattenException(ex)}");
+                throw;
+            }
+            trustedRoots = JsonSerializer.Deserialize<List<VCenterTrustedRootChainsSummary>>(responseContent);
             var chains = trustedRoots.Select(tr => tr.chain).ToList();
-            
+
             return chains;
         }
 
         public async Task<VCenterTrustedRootChainsInfo> GetTrustedRootChain(string chain)
         {
-            var request_uri = TRUSTEDROOTENDPOINT + chain;            
-            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain", request_uri);
+            var request_uri = TRUSTEDROOTENDPOINT + chain;
+            _logger.LogTrace($"Calling GET on vcenter endpoint {request_uri} for trusted root chain");
 
             var response = await VcenterClient.GetAsync(request_uri);
 
-            if (!response.IsSuccessStatusCode) {
+            if (!response.IsSuccessStatusCode)
+            {
                 var errorMessage = await response.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage);
             }
-            
-            var responseContent = await response.Content.ReadAsStringAsync();            
-            var trustedRootInfo = JsonConvert.DeserializeObject<VCenterTrustedRootChainsInfo>(responseContent);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var trustedRootInfo = JsonSerializer.Deserialize<VCenterTrustedRootChainsInfo>(responseContent);
             return trustedRootInfo;
         }
-        
+
         public async Task AddTrustedRoot(VCenterTrustedRootChainsCreate trustedRootChain)
         {
-            var jsonTrustedRootChain = JsonConvert.SerializeObject(trustedRootChain);
+            var jsonTrustedRootChain = JsonSerializer.Serialize(trustedRootChain);
             var request = new StringContent(jsonTrustedRootChain, Encoding.UTF8, "application/json");
-            _logger.LogDebug("Calling POST on vcenter endpoint for trusted root chain", request);
+            _logger.LogTrace("Calling POST on vcenter endpoint for trusted root chain");
 
             var response = await VcenterClient.PostAsync(TRUSTEDROOTENDPOINT, request);
-            
+
             if (!response.IsSuccessStatusCode)
             {
-                var errorMessage = await response.Content.ReadAsStringAsync();                
+                var errorMessage = await response.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage);
             }
         }
