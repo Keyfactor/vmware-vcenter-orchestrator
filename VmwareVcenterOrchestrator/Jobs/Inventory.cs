@@ -41,7 +41,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             {
                 //inventory ssl certificate and trusted root certificates
                 _logger.LogTrace("adding the SSL cert to the inventory..");
-                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate().GetAwaiter().GetResult()).ToList();
+                inventoryItems = FormatSslCert(VcenterClient.GetVcenterSslCertificate().GetAwaiter().GetResult())?.ToList();
                 _logger.LogTrace("successfully added the SSL cert to the inventory");
 
                 _logger.LogTrace("retrieving the trusted root chains");
