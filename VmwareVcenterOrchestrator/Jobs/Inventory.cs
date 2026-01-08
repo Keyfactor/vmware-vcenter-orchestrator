@@ -51,14 +51,14 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 {
                     _logger.LogTrace($"formatting the trusted root: {trustedRootChain}");
                     CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetTrustedRootChain(trustedRootChain).Result);
-                    inventoryItems.Add(trustedRootInventoryItem);
+                    if (trustedRootInventoryItem != null) inventoryItems.Add(trustedRootInventoryItem);
                 }
 
             }
             catch (Exception ex)
             {
-                var errMsg = "Error getting vCenter SSL Certificate:\n" + ex.Message;
-                _logger.LogError(errMsg);
+                var errMsg = "An error occurred during the inventory job:\n" + ex.Message;
+                _logger.LogError(LogHandler.FlattenException(ex));
                 result.FailureMessage = errMsg; 
                 return result;
             }
@@ -97,6 +97,12 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
         public CurrentInventoryItem FormatTrustedRoot(VCenterTrustedRootChainsInfo trustedRootInfo)
         {
             _logger.MethodEntry();
+            _logger.LogTrace($"trusted root chain: {String.Join(",", trustedRootInfo?.cert_chain?.cert_chain)}");
+
+            // if trusted root is null, or there are no entries, return null
+            if (trustedRootInfo == null || (!trustedRootInfo?.cert_chain?.cert_chain.Any() ?? false)) {
+                return null;
+            }
             //Format the retrieved trusted root chain certificate
             //Remove attached X509 CRL Cert if it exists            
             var index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM);
