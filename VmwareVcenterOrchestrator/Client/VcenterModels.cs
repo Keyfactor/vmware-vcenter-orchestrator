@@ -9,49 +9,51 @@
 using System.Collections.Generic;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator;
-
-public struct VCenterTlsCertInfo
+#nullable enable
+public class VCenterTlsCertInfo
 {
-    public string issuer_dn;
-    public List<string> key_usage;
-    public string thumbprint;
-    public string valid_from;
-    public string serial_number;
-    public string cert;
-    public int version;
-    public string subject_dn;
-    public int path_length_constraint;
-    public List<string> subject_alternative_name;
-    public string valid_to;
-    public string signature_algorithm;
-    public List<string> authority_information_access_uri;
-    public List<string> extended_key_usage;
+    public string issuer_dn { get; set; }
+    public List<string> key_usage { get; set; }
+    public string thumbprint { get; set; }
+    public string valid_from { get; set; }
+    public string serial_number { get; set; }
+    public string cert { get; set; }
+    public int? version { get; set; }
+    public bool? is_CA { get; set; }
+    public string subject_dn { get; set; }
+    public int? path_length_constraint { get; set; }
+    public List<string>? subject_alternative_name { get; set; }
+    public string valid_to { get; set; }
+    public string signature_algorithm { get; set; }
+    public List<string> authority_information_access_uri { get; set; }
+    public List<string> extended_key_usage { get; set; }
 }
 
-public struct VCenterTlsCertSet
+public class VCenterTlsCertSet
 {
-    public string cert;
-    public string key;
-    public string root_cert;
+    public string cert { get; set; }
+    public string key { get; set; }
+    public string root_cert { get; set; }
 }
 
-public struct VCenterTrustedRootChainsSummary
+public class VCenterTrustedRootChainsSummary
 {
-    public string chain;
+    public string chain { get; set; }
 }
 
-public struct VCenterTrustedRootChainsInfo
+public class VCenterTrustedRootChainsInfo
 {
-    public VCenterX509CertChain cert_chain;
+    public VCenterX509CertChain? cert_chain { get; set; }
 }
 
-public struct VCenterX509CertChain
+public class VCenterX509CertChain
 {
-    public List<string> cert_chain;
+    public List<string>? cert_chain { get; set; }
 }
 
 public struct VCenterTrustedRootChainsCreate
 {
-    public VCenterX509CertChain cert_chain;
+    public VCenterX509CertChain? cert_chain;
     public string chain;
 }
+#nullable restore

@@ -9,29 +9,73 @@
 using Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client;
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Extensions;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Reflection;
+using VmwareVcenterOrchestrator;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 {
-    public abstract class VmwareVcenterJob<T> : IOrchestratorJobExtension
+    public abstract class VmwareVcenterJob : IOrchestratorJobExtension
     {
         public string ExtensionName => "Vcenter";
+        internal protected ILogger _logger { get; set; }
 
         protected VmwareVcenterClient VcenterClient { get; private set; }
 
-        protected void Initialize(CertificateStore details)
+        internal protected IPAMSecretResolver PamSecretResolver { get; set; }
+
+        public VmwareVcenterJob(IPAMSecretResolver resolver)
         {
-            ILogger logger = LogHandler.GetReflectedClassLogger(this);
-            logger.LogTrace($"Certificate Store Configuration: {JsonConvert.SerializeObject(details)}");
-            logger.LogDebug("Initializing VmwareVsphereClient");
-            dynamic properties = JsonConvert.DeserializeObject(details.Properties);
+            PamSecretResolver = resolver;
+        }
 
-            string ClientMachine = details.ClientMachine;
-            string Username = properties.ServerUsername;
-            string Password = properties.ServerPassword;
+        protected void Initialize(InventoryJobConfiguration config)
+        {
+            _logger = LogHandler.GetClassLogger(GetType());
+            LogPluginVersion();
+            _logger.LogTrace($"Certificate Store Configuration: {JsonConvert.SerializeObject(config.CertificateStoreDetails)}");
+            _logger.LogDebug("Initializing VmwareVsphereClient");
 
-            VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);            
+            VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
+
+            _logger.LogTrace($"server username: {properties.ServerUsername}");
+            _logger.LogTrace($"server password: {properties.ServerPassword}");
+            _logger.LogTrace($"PamSecretResolver is {(PamSecretResolver == null ? "" : "not")} null");
+
+            string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
+
+            VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
+        }
+
+        protected void Initialize(ManagementJobConfiguration config)
+        {
+            _logger = LogHandler.GetClassLogger(GetType());
+            LogPluginVersion();
+            _logger.LogTrace($"Certificate Store Configuration: {JsonConvert.SerializeObject(config.CertificateStoreDetails)}");
+            _logger.LogDebug("Initializing VmwareVsphereClient");
+
+            VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
+
+            string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
+            _logger.LogTrace($"server username: {properties.ServerUsername}");
+            _logger.LogTrace($"server password: {properties.ServerPassword}");
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
+
+            VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
+        }
+
+        protected void LogPluginVersion()
+        {
+            var targetAssembly = Assembly.GetExecutingAssembly();
+            var assemblyName = targetAssembly?.GetName();
+            var version = assemblyName?.Version;
+            _logger.LogTrace("Keyfactor Orchestrator Extension for VMWare VCenter");
+            _logger.LogTrace($"{assemblyName?.Name ?? "unknown"} v{version}");
         }
     }
 }
