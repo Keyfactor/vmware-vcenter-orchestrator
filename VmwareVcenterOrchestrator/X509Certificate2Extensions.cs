@@ -9,9 +9,7 @@
 using Keyfactor.Logging;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
 
 namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
 {
@@ -82,17 +80,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
             }            
             _logger.LogTrace($"root chain = {rootChainPem}");
                                     
-            //var issuerCert = certChain.ChainElements.First(ce => ce.Certificate.SubjectName.Name.ToLower() == issuerDn.ToLower())?.Certificate;
-            
-            //if (issuerCert == null)
-            //{
-            //    _logger.LogDebug($"Unable to find trusted root with subject distinguished name of {issuerDn} in chain.");
-            //    return string.Empty;
-            //}
-            //_logger.LogTrace($"Found issuer cert named {issuerCert.FriendlyName}");
-
-            //var caCertificatePem = $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(issuerCert.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
-
             return rootChainPem;
         }
 
@@ -101,7 +88,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
             var privateKey = certificate.GetRSAPrivateKey();
             if (privateKey == null) return string.Empty;
 
-            var pkcs8privatekey = privateKey.ExportPkcs8PrivateKey();// certificate.PrivateKey.ExportPkcs8PrivateKey();
+            var pkcs8privatekey = privateKey.ExportPkcs8PrivateKey();
             var pem = Convert.ToBase64String(pkcs8privatekey);
             return $"{PRIVATE_KEY_HEADER_PEM}{pem}{PRIVATE_KEY_FOOTER_PEM}";
         }

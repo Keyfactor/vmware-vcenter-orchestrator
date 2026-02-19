@@ -49,8 +49,9 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
                 foreach (string trustedRootChain in trustedRootChains)
                 {
-                    _logger.LogTrace($"formatting the trusted root: {trustedRootChain}");
-                    CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(VcenterClient.GetTrustedRootChain(trustedRootChain).Result);
+                    _logger.LogTrace($"retreiving the trusted root with SN: {trustedRootChain}");
+                    var trustedRootCerts = VcenterClient.GetTrustedRootChain(trustedRootChain).GetAwaiter().GetResult();
+                    CurrentInventoryItem trustedRootInventoryItem = FormatTrustedRoot(trustedRootCerts);
                     if (trustedRootInventoryItem != null) inventoryItems.Add(trustedRootInventoryItem);
                 }
 
@@ -111,6 +112,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             {
                 trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
             }
+            trustedRootCert = trustedRootCert.Trim('\n', '\r'); // remove any leading or trailing hidden chars
+
             var pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM.ToCharArray()));
             var certificate = new X509Certificate2(pkcs12CertBytes);
 
