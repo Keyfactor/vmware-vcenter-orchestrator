@@ -39,14 +39,14 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             _logger.LogDebug("Initializing VmwareVsphereClient");
 
             VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
-
-            _logger.LogTrace($"server username: {properties.ServerUsername}");
-            _logger.LogTrace($"server password: {properties.ServerPassword}");
+            
+            _logger.LogTrace($"server username: {config.ServerUsername}");
+            _logger.LogTrace($"server password: {config.ServerPassword}");
             _logger.LogTrace($"PamSecretResolver is {(PamSecretResolver == null ? "" : "not")} null");
 
             string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
-            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
-            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", config.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", config.ServerPassword);
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
         }
@@ -61,10 +61,10 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
 
             string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
-            _logger.LogTrace($"server username: {properties.ServerUsername}");
-            _logger.LogTrace($"server password: {properties.ServerPassword}");
-            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", properties.ServerUsername);
-            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", properties.ServerPassword);
+            _logger.LogTrace($"server username: {config.ServerUsername}");
+            _logger.LogTrace($"server password: {config.ServerPassword}");
+            string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", config.ServerUsername);
+            string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", config.ServerPassword);
 
             VcenterClient = new VmwareVcenterClient(ClientMachine, Username, Password);
         }
