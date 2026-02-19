@@ -112,7 +112,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             {
                 trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
             }
-            trustedRootCert.Trim('\n', '\r'); // remove any leading or trailing hidden chars
+            trustedRootCert = trustedRootCert.Trim('\n', '\r'); // remove any leading or trailing hidden chars
 
             var pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM.ToCharArray()));
             var certificate = new X509Certificate2(pkcs12CertBytes);
