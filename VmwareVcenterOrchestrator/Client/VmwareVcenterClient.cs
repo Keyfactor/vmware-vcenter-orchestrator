@@ -163,7 +163,11 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogTrace($"serialized response: {responseContent}");
+            _logger.LogTrace("deserializing...");
             var trustedRootInfo = JsonSerializer.Deserialize<VCenterTrustedRootChainsInfo>(responseContent);
+            _logger.LogTrace($"deserialized chain: {trustedRootInfo.cert_chain?.cert_chain}");
+
             return trustedRootInfo;
         }
 
