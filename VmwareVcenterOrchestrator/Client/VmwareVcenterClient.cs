@@ -125,7 +125,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             var trustedRoots = new List<VCenterTrustedRootChainsSummary>();
             string responseContent;
 
-            _logger.LogDebug("Calling GET on vcenter endpoint for trusted root chain");
+            _logger.LogDebug($"Calling GET on vcenter endpoint {TRUSTEDROOTENDPOINT} for trusted root chain");
             try
             {
                 var response = await VcenterClient.GetAsync(TRUSTEDROOTENDPOINT);
@@ -143,6 +143,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
                 _logger.LogError($"There was an error retrieving the trusted root chains: {LogHandler.FlattenException(ex)}");
                 throw;
             }
+            _logger.LogTrace($"raw response content: {responseContent}");
             trustedRoots = JsonSerializer.Deserialize<List<VCenterTrustedRootChainsSummary>>(responseContent);
             var chains = trustedRoots.Select(tr => tr.chain).ToList();
 
@@ -163,7 +164,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Client
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
-            _logger.LogTrace($"serialized response: {responseContent}");
+            _logger.LogTrace($"raw response: {responseContent}");
             _logger.LogTrace("deserializing...");
             var trustedRootInfo = JsonSerializer.Deserialize<VCenterTrustedRootChainsInfo>(responseContent);
             _logger.LogTrace($"deserialized chain: {trustedRootInfo.cert_chain?.cert_chain}");

@@ -15,11 +15,11 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
 {
     public static class X509Certificate2Extensions
     {
-        public static string CERTIFICATE_HEADER_PEM => "-----BEGIN CERTIFICATE-----\n";
-        public static string CERTIFICATE_FOOTER_PEM => "\n-----END CERTIFICATE-----";
+        public static string CERTIFICATE_HEADER_PEM => "-----BEGIN CERTIFICATE-----";
+        public static string CERTIFICATE_FOOTER_PEM => "-----END CERTIFICATE-----";
 
-        public static string PRIVATE_KEY_HEADER_PEM => "-----BEGIN PRIVATE KEY-----\n";
-        public static string PRIVATE_KEY_FOOTER_PEM => "\n-----END PRIVATE KEY-----";
+        public static string PRIVATE_KEY_HEADER_PEM => "-----BEGIN PRIVATE KEY-----";
+        public static string PRIVATE_KEY_FOOTER_PEM => "-----END PRIVATE KEY-----";
 
         public static X509Certificate2? RootCACert(this X509Certificate2 cert)
         {
@@ -44,7 +44,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
         {
             //cert.pem
             // Convert the certificate to PEM format
-            string certificatePem = $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(cert.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
+            string certificatePem = $"{CERTIFICATE_HEADER_PEM}\n{Convert.ToBase64String(cert.Export(X509ContentType.Cert))}\n{CERTIFICATE_FOOTER_PEM}";
 
             // Convert the private key to PEM format
             string privateKeyPem = cert.ExportPrivateKeyToPem();
@@ -76,7 +76,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
             var rootChainPem = string.Empty;
 
             for (var i = 1; i < elementCount; i++) {
-                rootChainPem += $"{CERTIFICATE_HEADER_PEM}{Convert.ToBase64String(certChain.ChainElements[i].Certificate.Export(X509ContentType.Cert))}{CERTIFICATE_FOOTER_PEM}";
+                rootChainPem += $"{CERTIFICATE_HEADER_PEM}\n{Convert.ToBase64String(certChain.ChainElements[i].Certificate.Export(X509ContentType.Cert))}\n{CERTIFICATE_FOOTER_PEM}";
             }            
             _logger.LogTrace($"root chain = {rootChainPem}");
                                     
@@ -88,9 +88,23 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator
             var privateKey = certificate.GetRSAPrivateKey();
             if (privateKey == null) return string.Empty;
 
+            // On Windows, GetRSAPrivateKey() returns an RSACng whose CNG key may only have
+            // AllowExport set (permits encrypted PKCS#12 export), not AllowPlaintextExport
+            // (required for raw PKCS#8 export via ExportPkcs8PrivateKey). This override
+            // sets AllowPlaintextExport before calling ExportPkcs8PrivateKey so the method
+            // works regardless of how the certificate was originally loaded.
+            if (privateKey is System.Security.Cryptography.RSACng rsaCng)
+            {
+                rsaCng.Key.SetProperty(
+                    new System.Security.Cryptography.CngProperty(
+                        "Export Policy",
+                        BitConverter.GetBytes((int)System.Security.Cryptography.CngExportPolicies.AllowPlaintextExport),
+                        System.Security.Cryptography.CngPropertyOptions.None));
+            }
+
             var pkcs8privatekey = privateKey.ExportPkcs8PrivateKey();
             var pem = Convert.ToBase64String(pkcs8privatekey);
-            return $"{PRIVATE_KEY_HEADER_PEM}{pem}{PRIVATE_KEY_FOOTER_PEM}";
+            return $"{PRIVATE_KEY_HEADER_PEM}\n{pem}\n{PRIVATE_KEY_FOOTER_PEM}";
         }
     }
 }
