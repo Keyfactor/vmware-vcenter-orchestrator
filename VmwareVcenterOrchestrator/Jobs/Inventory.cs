@@ -98,23 +98,56 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
         public CurrentInventoryItem FormatTrustedRoot(VCenterTrustedRootChainsInfo trustedRootInfo)
         {
             _logger.MethodEntry();
-            _logger.LogTrace($"trusted root chain: {String.Join(",", trustedRootInfo?.cert_chain?.cert_chain)}");
+            _logger.LogTrace($"trusted root chain: {String.Join(",", trustedRootInfo?.cert_chain?.cert_chain ?? Enumerable.Empty<string>())}");
 
-            // if trusted root is null, or there are no entries, return null
-            if (trustedRootInfo == null || (!trustedRootInfo?.cert_chain?.cert_chain.Any() ?? false)) {
+            // Guard: null input, missing cert_chain object, or empty chain list.
+            // The original condition used nullable-propagation logic that evaluated
+            // to false (not true) when cert_chain was null, causing a NullReferenceException
+            // on the very next line. Replaced with explicit null checks.
+            if (trustedRootInfo == null
+                || trustedRootInfo.cert_chain == null
+                || trustedRootInfo.cert_chain.cert_chain == null
+                || !trustedRootInfo.cert_chain.cert_chain.Any())
+            {
+                _logger.LogTrace("no entries found.");
                 return null;
             }
-            //Format the retrieved trusted root chain certificate
-            //Remove attached X509 CRL Cert if it exists            
-            var index = trustedRootInfo.cert_chain.cert_chain[0].IndexOf(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM);
-            var trustedRootCert = string.Empty;
-            if (index >= 0)
-            {
-                trustedRootCert = trustedRootInfo.cert_chain.cert_chain[0].Substring(0, index);
-            }
-            trustedRootCert = trustedRootCert.Trim('\n', '\r'); // remove any leading or trailing hidden chars
 
-            var pkcs12CertBytes = Convert.FromBase64String(trustedRootCert.TrimStart(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM.ToCharArray()));
+            var rootCert = trustedRootInfo.cert_chain.cert_chain[0];
+
+            var headerStartIndex = rootCert.IndexOf(X509Certificate2Extensions.CERTIFICATE_HEADER_PEM);
+            if (headerStartIndex == -1)
+            {
+                _logger.LogTrace("no PEM header found");
+                return null;
+            }
+
+            var footerStartIndex = rootCert.IndexOf(X509Certificate2Extensions.CERTIFICATE_FOOTER_PEM);
+            if (footerStartIndex == -1)
+            {
+                _logger.LogTrace("no PEM footer found");
+                return null;
+            }
+
+            // Extract the raw base64 body: everything between the end of the header
+            // and the start of the footer.  Then strip ALL whitespace so that
+            // Convert.FromBase64String receives a clean string regardless of:
+            //   - line wrap width (64-char, 76-char, or no wrapping)
+            //   - line endings (LF, CRLF, or mixed)
+            //   - leading/trailing spaces or blank lines in the body
+            //   - bag-attribute blocks before the header (skipped by headerStartIndex)
+            var bodyStartIndex = headerStartIndex + X509Certificate2Extensions.CERTIFICATE_HEADER_PEM.Length;
+            var certContent = rootCert.Substring(bodyStartIndex, footerStartIndex - bodyStartIndex);
+            certContent = new string(certContent.Where(c => !char.IsWhiteSpace(c)).ToArray());
+
+            _logger.LogTrace("extracted cert content to be base64 decoded:");
+            _logger.LogTrace(certContent);
+
+            var pkcs12CertBytes = Convert.FromBase64String(certContent);
+
+            _logger.LogTrace($"successfully decoded into a byte array of length {pkcs12CertBytes.Length}");
+
+            _logger.LogTrace($"creating new x509 certificate from certificate byte array");
             var certificate = new X509Certificate2(pkcs12CertBytes);
 
             // Create new inventory item for the certificate
@@ -126,7 +159,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
                 PrivateKeyEntry = false,
                 ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                 UseChainLevel = true,
-                Certificates = certList
+                Certificates = certList,
             };
             return inventoryItem;
         }
