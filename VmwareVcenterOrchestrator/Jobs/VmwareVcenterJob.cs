@@ -20,7 +20,7 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
     public abstract class VmwareVcenterJob : IOrchestratorJobExtension
     {
         public string ExtensionName => "Vcenter";
-        internal protected ILogger _logger { get; set; }
+        public ILogger _logger { get; set; }
 
         protected VmwareVcenterClient VcenterClient { get; private set; }
 
@@ -40,8 +40,8 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
 
             VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
             
-            _logger.LogTrace($"server username: {config.ServerUsername}");
-            _logger.LogTrace($"server password: {config.ServerPassword}");
+            //_logger.LogTrace($"server username: {config.ServerUsername}");
+            //_logger.LogTrace($"server password: {config.ServerPassword}");
             _logger.LogTrace($"PamSecretResolver is {(PamSecretResolver == null ? "" : "not")} null");
 
             string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
@@ -61,8 +61,6 @@ namespace Keyfactor.Extensions.Orchestrator.VmwareVcenterOrchestrator.Jobs
             VcenterProperties properties = JsonConvert.DeserializeObject<VcenterProperties>(config.CertificateStoreDetails?.Properties);
 
             string ClientMachine = config.CertificateStoreDetails?.ClientMachine;
-            _logger.LogTrace($"server username: {config.ServerUsername}");
-            _logger.LogTrace($"server password: {config.ServerPassword}");
             string Username = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Username", config.ServerUsername);
             string Password = PamUtilities.ResolvePAMField(PamSecretResolver, _logger, "Server Password", config.ServerPassword);
 
